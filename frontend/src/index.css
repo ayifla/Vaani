@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #F8F5EE;
+  --color-surface-dim: #F2ECE1;
+  --color-surface-bright: #ffffff;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #FDFBF7;
+  --color-surface-mid: #F8F5EE;
+  --color-surface-high: #EBE3D4;
+  --color-surface-highest: #E3DAC9;
+  
+  /* Vaani Brand Identity Palette */
+  --color-brand-forest: #1E3A2B;
+  --color-brand-forest-dark: #152A1F;
+  --color-brand-forest-light: #2A4F3C;
+  --color-brand-forest-tint: #E7EFEA;
+  
+  --color-brand-terracotta: #C87A5B;
+  --color-brand-terracotta-dark: #B56B4E;
+  --color-brand-terracotta-tint: #FAF0EB;
+  
+  --color-brand-mauve: #8D656E;
+  --color-brand-mauve-tint: #F5ECEE;
+  
+  --color-brand-sunlit: #E5B25D;
+  --color-brand-sunlit-dark: #C79237;
+  --color-brand-sunlit-tint: #FAF3E3;
+  
+  --color-brand-ivory: #F8F5EE;
+  --color-brand-ivory-cream: #F2ECE1;
+  --color-brand-ivory-border: #E3DAC9;
+
+  --color-border-natural: #E3DAC9;
+  --color-border-subtle: #F2ECE1;
+  --color-text-main: #1E3A2B;
+  --color-text-body: #343832;
+  --color-text-muted: #72786F;
+  --color-text-light: #9DA39A;
+  
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+/* Custom scrollbar styling for Vaani Brand Palette */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F8F5EE;
+}
+::-webkit-scrollbar-thumb {
+  background: #E3DAC9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1E3A2B;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(30, 58, 43, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(30, 58, 43, 0.4);
+  }
+}
+
+.animate-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
