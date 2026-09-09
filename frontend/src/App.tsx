@@ -74,15 +74,10 @@ export default function App() {
           setAppMode('mobile_mockup');
           showToast('Opening Vaani Mobile App interactive preview...');
         }}
-        selectedVoice={selectedVoice}
-        speed={speechSpeed}
-        onToggleSpeed={handleToggleSpeed}
-        contrastMode={contrastMode}
-        onToggleContrast={handleToggleContrast}
       />
 
       {/* Main Experience View Switcher */}
-      <main className="flex-1 w-full pt-20 bg-[#F8F5EE]">
+      <main className="flex-1 w-full pt-10 bg-[#F8F5EE]">
         {appMode === 'mobile_mockup' ? (
           /* DEDICATED SMARTPHONE APP PREVIEW */
           <MobileAppMockup
@@ -100,18 +95,15 @@ export default function App() {
         ) : (
           /* FULL DESKTOP WEB APPLICATION SCREENS */
           <>
-            {currentWebScreen === 'sign-workspace' && (
-              <SignWorkspace
-                currentScenario={currentScenario}
-                onSelectScenario={setCurrentScenario}
-                selectedVoice={selectedVoice}
-                speed={speechSpeed}
-                conversationHistory={conversationHistory}
-                onAddExchange={handleAddConversationExchange}
-                contrastMode={contrastMode}
-                onShowToast={showToast}
-              />
-            )}
+{currentWebScreen === 'sign-workspace' && (
+                <SignWorkspace
+                  currentScenario={currentScenario}
+                  onSelectScenario={setCurrentScenario}
+                  conversationHistory={conversationHistory}
+                  onAddExchange={handleAddConversationExchange}
+                  onShowToast={showToast}
+                />
+              )}
 
             {currentWebScreen === 'conversation-history' && (
               <ConversationHistoryView

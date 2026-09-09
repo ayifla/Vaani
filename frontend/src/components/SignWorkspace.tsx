@@ -10,7 +10,6 @@ import {
   Share2, 
   RotateCcw, 
   Check, 
-  Pause, 
   Play, 
   RefreshCw, 
   History, 
@@ -22,7 +21,10 @@ import {
   ChevronDown,
   X,
   Edit3,
-  Lightbulb
+  Lightbulb,
+  Gauge,
+  Mic2,
+  ChevronUp
 } from 'lucide-react';
 import { ConceptToken, ConversationExchange, SimulationScenario } from '../types';
 import { SIMULATION_SCENARIOS } from '../data/mockData';
@@ -31,34 +33,35 @@ import { speakText } from '../utils/speech';
 interface SignWorkspaceProps {
   currentScenario: SimulationScenario;
   onSelectScenario: (scenario: SimulationScenario) => void;
-  selectedVoice: string;
-  speed: number;
   conversationHistory: ConversationExchange[];
   onAddExchange: (exchange: ConversationExchange) => void;
-  contrastMode: boolean;
   onShowToast: (message: string) => void;
 }
 
 export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   currentScenario,
   onSelectScenario,
-  selectedVoice,
-  speed,
   conversationHistory,
   onAddExchange,
-  contrastMode,
   onShowToast,
 }) => {
   // Vision & Camera states
   const [isLiveCamera, setIsLiveCamera] = useState<boolean>(false);
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(true);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [isMirrored, setIsMirrored] = useState<boolean>(false);
   const [assistiveLight, setAssistiveLight] = useState<boolean>(true);
   const [showLandmarks, setShowLandmarks] = useState<boolean>(true);
-  const [isPaused, setIsPaused] = useState<boolean>(false);
   const [sensitivity, setSensitivity] = useState<'High' | 'Normal' | 'Strict'>('High');
   const [registerMode, setRegisterMode] = useState<'Casual' | 'Academic' | 'Medical'>('Casual');
   const [dialect, setDialect] = useState<string>('ISL / ASL Dual');
+
+  // Context Popover state
+  const [isContextOpen, setIsContextOpen] = useState<boolean>(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
+
+  // Voice & Speech state (local, no longer from props)
+  const [selectedVoice, setSelectedVoice] = useState<'Mira' | 'Rian'>('Mira');
+  const [speed, setSpeed] = useState<number>(1.0);
 
   // Interactive Tokens & Sentence
   const [tokens, setTokens] = useState<ConceptToken[]>(currentScenario.tokens);
@@ -130,10 +133,20 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
     if (isSpeaking) return;
     setIsSpeaking(true);
 
+    // Map friendly voice names to actual SpeechSynthesis voice preferences
+    const voiceMap: Record<string, string[]> = {
+      Mira: ['Samantha', 'Karen', 'Google UK English Female', 'Google US English Female', 'Microsoft Zira'],
+      Rian: ['Daniel', 'Google UK English Male', 'Google US English Male', 'Microsoft David'],
+    };
+    const preferredNames = voiceMap[selectedVoice] || voiceMap.Mira;
+
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find((v) => v.lang.startsWith('en') && preferredNames.some((n) => v.name.includes(n)));
+
     speakText(sentenceText, {
       rate: speed,
       pitch: 1.05,
-      voiceName: selectedVoice,
+      voiceName: voice?.name,
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
     });
@@ -184,138 +197,78 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   };
 
   const handleReplayPast = (phrase: string) => {
+    // Map friendly voice names to actual SpeechSynthesis voice preferences
+    const voiceMap: Record<string, string[]> = {
+      Mira: ['Samantha', 'Karen', 'Google UK English Female', 'Google US English Female', 'Microsoft Zira'],
+      Rian: ['Daniel', 'Google UK English Male', 'Google US English Male', 'Microsoft David'],
+    };
+    const preferredNames = voiceMap[selectedVoice] || voiceMap.Mira;
+
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find((v) => v.lang.startsWith('en') && preferredNames.some((n) => v.name.includes(n)));
+
     speakText(phrase, {
       rate: speed,
       pitch: 1.05,
-      voiceName: selectedVoice,
+      voiceName: voice?.name,
     });
     onShowToast(`Replaying: ${phrase}`);
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto flex flex-col gap-6 font-sans text-[#343832]">
+    <div className="w-full px-4 sm:px-6 lg:px-10 py-1 lg:py-2 max-w-[1600px] mx-auto flex flex-col gap-3 lg:gap-4 font-sans text-[#343832]">
       
-      {/* 1. PIPELINE STATUS & CONTROL SUB-HEADER */}
-      <section className="w-full flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 p-5 rounded-[28px] bg-[#FDFBF7] border border-[#E3DAC9] shadow-xs">
-        
-        {/* Breadcrumb Stage Pipeline */}
-        <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm">
-          {/* Step 1: Tracking */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#E3DAC9] shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-[#1E3A2B] animate-pulse"></span>
-            <span className="text-[#343832] font-medium">
-              Hands in Frame: <strong className="text-[#1E3A2B]">Tracking</strong>
-            </span>
-          </div>
-
-          <ArrowRight className="w-3.5 h-3.5 text-[#9DA39A]" />
-
-          {/* Step 2: Concepts */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#E3DAC9] shadow-xs">
-            <span className="font-bold text-[#1E3A2B]">{tokens.length}</span>
-            <span className="text-[#72786F]">Concepts Captured</span>
-          </div>
-
-          <ArrowRight className="w-3.5 h-3.5 text-[#9DA39A]" />
-
-          {/* Step 3: Context Weaved */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#E3DAC9] shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#E5B25D]" />
-            <span className="text-[#343832]">
-              Context Weaved: <span className="text-[#C87A5B] font-bold">98%</span>
-            </span>
-          </div>
-
-          <ArrowRight className="w-3.5 h-3.5 text-[#9DA39A]" />
-
-          {/* Step 4: Ready to Speak */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1E3A2B] text-white shadow-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-[#E5B25D]"></span>
-            <span className="tracking-wide">Ready to Speak</span>
-          </div>
-        </div>
-
-        {/* Right Mode & Context Tuning Controls */}
-        <div className="flex items-center flex-wrap gap-3">
-          
-          {/* Register Mode Selection */}
-          <div className="flex items-center bg-[#F2ECE1] p-1 rounded-full border border-[#E3DAC9]">
-            {(['Casual', 'Academic', 'Medical'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => {
-                  setRegisterMode(mode);
-                  onShowToast(`Switched translation register to ${mode}`);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                  registerMode === mode
-                    ? 'bg-[#1E3A2B] text-white shadow-xs'
-                    : 'text-[#72786F] hover:text-[#1E3A2B]'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-
-          {/* Camera Feed Mode Toggle */}
-          <div className="flex items-center bg-[#F2ECE1] p-1 rounded-full border border-[#E3DAC9]">
-            <button
-              onClick={() => {
-                setIsLiveCamera(false);
-                onShowToast('Active feed: Simulated Spatial Demo stream');
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                !isLiveCamera
-                  ? 'bg-[#1E3A2B] text-white shadow-xs'
-                  : 'text-[#72786F] hover:text-[#1E3A2B]'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Simulated Stream</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setIsLiveCamera(true);
-                onShowToast('Requesting Live Camera permission...');
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                isLiveCamera
-                  ? 'bg-[#1E3A2B] text-white shadow-xs'
-                  : 'text-[#72786F] hover:text-[#1E3A2B]'
-              }`}
-            >
-              <Video className="w-3.5 h-3.5" />
-              <span>Live Camera</span>
-            </button>
-          </div>
-
-        </div>
-      </section>
-
       {/* 2. TWO COLUMN MAIN WORKSPACE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
         
         {/* LEFT COLUMN: SPATIAL CAMERA VISION HUD (7 COLUMNS) */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
+        <div className="lg:col-span-7 flex flex-col gap-3">
           
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-serif italic text-[#1E3A2B]">
-              Sign <span className="text-xs font-sans not-italic text-[#9DA39A] ml-2 uppercase tracking-widest">— Workspace 01</span>
+            <h2 className="text-2xl font-serif italic text-[#1E3A2B]">
+              Sign
             </h2>
-            <div className="flex gap-2">
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-[#E7EFEA] text-[#1E3A2B] rounded-full text-[11px] font-bold uppercase border border-[#CDE0D4]">
-                <span className="w-2 h-2 bg-[#1E3A2B] rounded-full animate-pulse"></span>
-                Camera Active
-              </span>
+            <div className="flex items-center gap-2">
+              {isLiveCamera && isCameraActive && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#E7EFEA]/60 text-[#1E3A2B] rounded-full text-[10px] font-semibold uppercase border border-[#CDE0D4]/60">
+                  <span className="w-1.5 h-1.5 bg-[#1E3A2B] rounded-full animate-pulse"></span>
+                  Camera Active
+                </span>
+              )}
+              {/* Camera Toggle Button */}
+              <button
+                onClick={() => {
+                  if (isLiveCamera && isCameraActive) {
+                    setIsLiveCamera(false);
+                    setIsCameraActive(false);
+                    onShowToast('Camera stopped');
+                  } else {
+                    setIsLiveCamera(true);
+                    setIsCameraActive(true);
+                    onShowToast('Starting camera...');
+                  }
+                }}
+                className={`p-2 rounded-xl transition-colors flex items-center justify-center ${
+                  isLiveCamera && isCameraActive
+                    ? 'bg-[#1E3A2B] text-white hover:bg-[#152A1F]'
+                    : 'bg-[#F2ECE1] text-[#1E3A2B] hover:bg-[#EBE3D4] border border-[#E3DAC9]'
+                }`}
+                title={isLiveCamera && isCameraActive ? 'Stop Camera' : 'Start Camera'}
+                aria-label={isLiveCamera && isCameraActive ? 'Stop Camera' : 'Start Camera'}
+              >
+                {isLiveCamera && isCameraActive ? (
+                  <VideoOff className="w-4 h-4" />
+                ) : (
+                  <Video className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
 
           {/* Camera Viewport Container with Forest Slate backdrop */}
-          <div className="relative w-full rounded-[32px] overflow-hidden bg-[#152019] border-4 border-white shadow-xl aspect-[16/10] sm:aspect-[16/9] flex items-end">
+          <div className="relative w-full rounded-[32px] overflow-hidden bg-[#152019] border-4 border-white shadow-xl aspect-[16/10] sm:aspect-[16/9]">
             
-            {/* Real or Simulated Video Feed */}
+            {/* Real Live Camera Feed - only when active */}
             {isLiveCamera && isCameraActive ? (
               <video
                 ref={videoRef}
@@ -324,207 +277,204 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                 muted
                 className={`absolute inset-0 w-full h-full object-cover select-none ${isMirrored ? 'scale-x-[-1]' : ''}`}
               />
-            ) : isCameraActive ? (
-              <img
-                alt="Live spatial sign tracking stream"
-                className={`absolute inset-0 w-full h-full object-cover select-none ${isMirrored ? 'scale-x-[-1]' : ''} ${isPaused ? 'filter saturate-50 brightness-75' : ''}`}
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS7L_BctFp2Go_GIN6d_xL2c560XyTq1wWlkE1WEy7G8rJtiHFMijTWmK0JjC9rngxSMhR_ZyjL-0Q8YnEB9GMfEnrdTDfvaSCxXb24TMZgVMjnx8CorSsAJXYDcVSkmunluH_uXyTJzdj8imKFFPHxGqrB40WhVDAkYdLbIECDT0LBx3GIectC-YLvm2m4m3BkSAh-btiJs3kFywbtrNJhEzFbfe8IWGLWf6oC_WfzNCXFbF-V0ChRw"
-              />
             ) : (
-              <div className="absolute inset-0 bg-[#152019] flex flex-col items-center justify-center text-white gap-3">
-                <VideoOff className="w-12 h-12 text-[#9DA39A]" />
-                <p className="text-sm font-medium">Camera Feed Paused</p>
+              <div className="absolute inset-0 bg-[#152019] flex flex-col items-center justify-center text-white gap-4">
+                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+                  <Video className="w-8 h-8 text-white/60" />
+                </div>
+                <div className="text-center px-6">
+                  <p className="text-lg font-medium text-white">Camera Off</p>
+                  <p className="text-sm text-white/60 mt-1">Allow camera access to begin signing</p>
+                </div>
                 <button
-                  onClick={() => setIsCameraActive(true)}
-                  className="px-4 py-2 rounded-full bg-[#1E3A2B] text-white text-xs font-semibold shadow-xs hover:bg-[#152A1F]"
+                  onClick={() => {
+                    setIsLiveCamera(true);
+                    setIsCameraActive(true);
+                  }}
+                  className="px-6 py-3 rounded-full bg-[#1E3A2B] text-white text-sm font-semibold shadow-lg hover:bg-[#152A1F] transition-colors flex items-center gap-2"
                 >
-                  Resume Camera
+                  <Video className="w-5 h-5" />
+                  <span>Start Camera</span>
                 </button>
               </div>
             )}
 
-            {/* Subtle Vignette Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#152019]/90 via-transparent to-[#152019]/40 pointer-events-none" />
+            {/* Subtle Vignette Overlay - only when camera active */}
+            {isLiveCamera && isCameraActive && (
+              <div className="absolute inset-0 bg-gradient-to-t from-[#152019]/90 via-transparent to-[#152019]/40 pointer-events-none" />
+            )}
 
-            {/* AR Skeletal Tracking Overlay */}
-            <div className="absolute inset-4 sm:inset-6 pointer-events-none flex flex-col justify-between">
-              
-              {/* Top Row: Detection Badges */}
-              <div className="flex justify-between items-start">
-                <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-white text-xs border border-white/20 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#E5B25D] animate-pulse" />
-                  <span>Tracking: <strong className="text-[#E5B25D]">99.2% Accuracy</strong></span>
-                </div>
-
-                <div className="flex gap-2">
-                  <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-white text-xs border border-white/20">
-                    Detected: <span className="text-[#E5B25D] font-bold ml-1">Hand Position OK</span>
-                  </div>
-                  <div className="hidden sm:block px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-white text-xs border border-white/20">
-                    Lighting: <span className="text-[#E7EFEA] font-bold ml-1">Optimal</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Skeletal Hand Mesh Landmarks Overlay */}
-              {showLandmarks && isCameraActive && (
-                <div className="relative w-full h-32 flex items-center justify-center pointer-events-none">
-                  <svg className="w-full h-full max-w-sm" viewBox="0 0 300 120" fill="none">
-                    {/* Interconnected Neural Filaments */}
-                    <path
-                      d="M60,95 L85,60 L120,40 L150,55 L180,35 L210,65 L235,95"
-                      stroke="#E3DAC9"
-                      strokeWidth="1.5"
-                      strokeDasharray="3 3"
-                      className="opacity-70"
-                    />
-                    <path d="M85,60 L95,20 L110,12" stroke="#1E3A2B" strokeWidth="2" />
-                    <path d="M120,40 L130,10 L145,5" stroke="#C87A5B" strokeWidth="2" />
-                    <path d="M150,55 L165,15 L178,10" stroke="#8D656E" strokeWidth="2" />
-                    <path d="M180,35 L195,22 L205,18" stroke="#E3DAC9" strokeWidth="1.5" />
-
-                    {/* Joint Landmark Nodes with Brand Identity Accents */}
-                    <circle cx="110" cy="12" r="4" fill="#E3DAC9" className="animate-pulse" />
-                    <circle cx="145" cy="5" r="5" fill="#C87A5B" />
-                    <circle cx="178" cy="10" r="4" fill="#E5B25D" />
-                    <circle cx="205" cy="18" r="3.5" fill="#8D656E" />
-                    <circle cx="120" cy="40" r="3.5" fill="#1E3A2B" />
-                    <circle cx="150" cy="55" r="3.5" fill="#C87A5B" />
-
-                    {/* Spatial Ripple Wave */}
-                    <circle cx="145" cy="5" r="14" stroke="#C87A5B" strokeWidth="1.5" className="animate-ping opacity-60" />
-                  </svg>
-                </div>
-              )}
-
-              {/* Bottom Spatial Guidance Banner */}
-              <div className="flex justify-between items-end">
-                <div className="px-3.5 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-white text-xs border border-white/20 flex items-center gap-2">
-                  <Hand className="w-3.5 h-3.5 text-white" />
-                  <span>Position hands within the frame</span>
-                </div>
-
-                <div className="hidden sm:block text-[11px] text-white/70 font-mono">
-                  FPS: 60 • Latency: 42ms
-                </div>
-              </div>
-
-            </div>
-
-            {/* Active Recognizing Strip at Bottom of Camera Viewport */}
-            <div className="relative z-10 w-full p-4 bg-gradient-to-t from-[#152019] via-[#152019]/85 to-transparent flex items-center justify-between text-white">
-              <div className="flex items-center gap-3">
-                <span className="flex h-3 w-3 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C87A5B] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C87A5B]"></span>
-                </span>
+            {/* AR Skeletal Tracking Overlay - only when camera active */}
+            {isLiveCamera && isCameraActive && (
+              <div className="absolute inset-4 sm:inset-6 pointer-events-none flex flex-col justify-between">
                 
-                <span className="text-xs uppercase tracking-widest text-[#E3DAC9] font-bold">
-                  RECOGNIZING SIGN:
-                </span>
+                {/* Top Row: Detection Badges */}
+                <div className="flex justify-between items-start">
+                  <div className="px-2.5 py-1 bg-black/30 backdrop-blur-md rounded-lg text-white text-[10px] border border-white/15 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E5B25D] animate-pulse" />
+                    <span>Tracking: <strong className="text-[#E5B25D]">99%</strong></span>
+                  </div>
 
-                <span className="text-sm font-semibold text-white bg-white/15 px-3 py-1 rounded-lg border border-white/20 shadow-xs">
-                  {tokens.length > 0 ? `“${tokens[tokens.length - 1].word}”` : '“calibrating...”'}{' '}
-                  <span className="text-white/70 font-normal text-xs">
-                    (captured 0.2s ago)
+                  <div className="flex gap-2">
+                    <div className="px-2.5 py-1 bg-black/30 backdrop-blur-md rounded-lg text-white text-[10px] border border-white/15">
+                      <span className="text-[#E5B25D] font-bold">Hand OK</span>
+                    </div>
+                    <div className="hidden sm:block px-2.5 py-1 bg-black/30 backdrop-blur-md rounded-lg text-white text-[10px] border border-white/15">
+                      <span className="text-[#E7EFEA] font-bold">Optimal Light</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamic Skeletal Hand Mesh Landmarks Overlay */}
+                {showLandmarks && (
+                  <div className="relative w-full h-32 flex items-center justify-center pointer-events-none">
+                    <svg className="w-full h-full max-w-sm opacity-70" viewBox="0 0 300 120" fill="none">
+                      {/* Interconnected Neural Filaments */}
+                      <path
+                        d="M60,95 L85,60 L120,40 L150,55 L180,35 L210,65 L235,95"
+                        stroke="#E3DAC9"
+                        strokeWidth="1.5"
+                        strokeDasharray="3 3"
+                        className="opacity-50"
+                      />
+                      <path d="M85,60 L95,20 L110,12" stroke="#1E3A2B" strokeWidth="2" />
+                      <path d="M120,40 L130,10 L145,5" stroke="#C87A5B" strokeWidth="2" />
+                      <path d="M150,55 L165,15 L178,10" stroke="#8D656E" strokeWidth="2" />
+                      <path d="M180,35 L195,22 L205,18" stroke="#E3DAC9" strokeWidth="1.5" />
+
+                      {/* Joint Landmark Nodes with Brand Identity Accents */}
+                      <circle cx="110" cy="12" r="4" fill="#E3DAC9" className="animate-pulse" />
+                      <circle cx="145" cy="5" r="5" fill="#C87A5B" />
+                      <circle cx="178" cy="10" r="4" fill="#E5B25D" />
+                      <circle cx="205" cy="18" r="3.5" fill="#8D656E" />
+                      <circle cx="120" cy="40" r="3.5" fill="#1E3A2B" />
+                      <circle cx="150" cy="55" r="3.5" fill="#C87A5B" />
+
+                      {/* Spatial Ripple Wave */}
+                      <circle cx="145" cy="5" r="14" stroke="#C87A5B" strokeWidth="1.5" className="animate-ping opacity-40" />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Bottom Spatial Guidance Banner */}
+                <div className="flex justify-between items-end">
+                  <div className="px-3 py-1 bg-black/30 backdrop-blur-md rounded-lg text-white text-[10px] border border-white/15 flex items-center gap-1.5">
+                    <Hand className="w-3 h-3 text-white/80" />
+                    <span className="text-white/90">Position hands within frame</span>
+                  </div>
+
+                  <div className="hidden sm:block text-[9px] text-white/50 font-mono">
+                    FPS: 60 • 42ms
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Active Recognizing Strip at Bottom of Camera Viewport - only when camera active */}
+            {isLiveCamera && isCameraActive && (
+              <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-[#152019] via-[#152019]/85 to-transparent flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C87A5B] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C87A5B]"></span>
                   </span>
-                </span>
-              </div>
+                  
+                  <span className="text-xs uppercase tracking-widest text-[#E3DAC9] font-bold">
+                    RECOGNIZING SIGN:
+                  </span>
 
-              <div className="hidden sm:flex items-center gap-1.5 text-[#E5B25D] text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="text-[#E3DAC9]">ISL/ASL Engine</span>
+                  <span className="text-sm font-semibold text-white bg-white/15 px-3 py-1 rounded-lg border border-white/20 shadow-xs">
+                    {tokens.length > 0 ? `“${tokens[tokens.length - 1].word}”` : '“calibrating...”'}{' '}
+                    <span className="text-white/70 font-normal text-xs">
+                      (captured 0.2s ago)
+                    </span>
+                  </span>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-1.5 text-[#E5B25D] text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="text-[#E3DAC9]">ISL/ASL Engine</span>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 
-          {/* Camera Tactile Control Bar in Ivory and Forest Green */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#E3DAC9] shadow-xs">
-            
-            {/* Viewport tool icons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setIsCameraActive(!isCameraActive);
-                  onShowToast(isCameraActive ? 'Camera muted' : 'Camera resumed');
-                }}
-                className="p-2.5 rounded-xl bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] border border-[#E3DAC9] transition-colors"
-                title="Toggle Camera Stream"
-              >
-                {isCameraActive ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4 text-[#9DA39A]" />}
-              </button>
+          {/* Camera Tactile Control Bar - only when camera active */}
+          {isLiveCamera && isCameraActive && (
+            <div className="w-full flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#E3DAC9] shadow-xs">
+              
+              {/* Viewport tool icons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setIsLiveCamera(false);
+                    setIsCameraActive(false);
+                    onShowToast('Camera stopped');
+                  }}
+                  className="p-2.5 rounded-xl bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] border border-[#E3DAC9] transition-colors"
+                  title="Stop Camera"
+                >
+                  <VideoOff className="w-4 h-4 text-[#9DA39A]" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setIsMirrored(!isMirrored);
-                  onShowToast(isMirrored ? 'Mirror view disabled' : 'Mirror view active');
-                }}
-                className="p-2.5 rounded-xl bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] border border-[#E3DAC9] transition-colors"
-                title="Mirror Camera View"
-              >
-                <FlipHorizontal className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => {
+                    setIsMirrored(!isMirrored);
+                    onShowToast(isMirrored ? 'Mirror view disabled' : 'Mirror view active');
+                  }}
+                  className="p-2.5 rounded-xl bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] border border-[#E3DAC9] transition-colors"
+                  title="Mirror Camera View"
+                >
+                  <FlipHorizontal className="w-4 h-4" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setAssistiveLight(!assistiveLight);
-                  onShowToast(assistiveLight ? 'Assistive lighting dimmed' : 'Assistive lighting enhanced');
-                }}
-                className={`p-2.5 rounded-xl border border-[#E3DAC9] transition-colors ${
-                  assistiveLight ? 'bg-[#1E3A2B] text-white' : 'bg-[#F2ECE1] text-[#1E3A2B]'
-                }`}
-                title="Assistive Optical Lighting"
-              >
-                <Sun className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => {
+                    setAssistiveLight(!assistiveLight);
+                    onShowToast(assistiveLight ? 'Assistive lighting dimmed' : 'Assistive lighting enhanced');
+                  }}
+                  className={`p-2.5 rounded-xl border border-[#E3DAC9] transition-colors ${
+                    assistiveLight ? 'bg-[#1E3A2B] text-white' : 'bg-[#F2ECE1] text-[#1E3A2B]'
+                  }`}
+                  title="Assistive Optical Lighting"
+                >
+                  <Sun className="w-4 h-4" />
+                </button>
 
-              <button
-                onClick={() => {
-                  setShowLandmarks(!showLandmarks);
-                  onShowToast(showLandmarks ? 'Skeletal points hidden' : 'Skeletal landmarks visible');
-                }}
-                className={`p-2.5 rounded-xl border border-[#E3DAC9] transition-colors ${
-                  showLandmarks ? 'bg-[#1E3A2B] text-white' : 'bg-[#F2ECE1] text-[#1E3A2B]'
-                }`}
-                title="Toggle Skeletal Landmark Mesh"
-              >
-                <BrainCircuit className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => {
+                    setShowLandmarks(!showLandmarks);
+                    onShowToast(showLandmarks ? 'Skeletal points hidden' : 'Skeletal landmarks visible');
+                  }}
+                  className={`p-2.5 rounded-xl border border-[#E3DAC9] transition-colors ${
+                    showLandmarks ? 'bg-[#1E3A2B] text-white' : 'bg-[#F2ECE1] text-[#1E3A2B]'
+                  }`}
+                  title="Toggle Skeletal Landmark Mesh"
+                >
+                  <BrainCircuit className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sensitivity */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const modes: ('High' | 'Normal' | 'Strict')[] = ['High', 'Normal', 'Strict'];
+                    const next = modes[(modes.indexOf(sensitivity) + 1) % modes.length];
+                    setSensitivity(next);
+                    onShowToast(`Spatial Sensitivity: ${next}`);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] text-xs font-semibold border border-[#E3DAC9] transition-colors"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-[#1E3A2B]" />
+                  <span>Sensitivity: {sensitivity}</span>
+                </button>
+              </div>
+
             </div>
-
-            {/* Sensitivity & Pause Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const modes: ('High' | 'Normal' | 'Strict')[] = ['High', 'Normal', 'Strict'];
-                  const next = modes[(modes.indexOf(sensitivity) + 1) % modes.length];
-                  setSensitivity(next);
-                  onShowToast(`Spatial Sensitivity: ${next}`);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] text-xs font-semibold border border-[#E3DAC9] transition-colors"
-              >
-                <Sliders className="w-3.5 h-3.5 text-[#1E3A2B]" />
-                <span>Sensitivity: {sensitivity}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsPaused(!isPaused);
-                  onShowToast(isPaused ? 'Vision processing resumed' : 'Vision stream paused');
-                }}
-                className={`flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold shadow-xs transition-all ${
-                  isPaused
-                    ? 'bg-[#C87A5B] text-white'
-                    : 'bg-[#1E3A2B] hover:bg-[#152A1F] text-white'
-                }`}
-              >
-                {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                <span>{isPaused ? 'Resume Vision' : 'Pause Vision'}</span>
-              </button>
-            </div>
-
-          </div>
+          )}
 
           {/* Vision Analytics Micro Panel */}
           <div className="grid grid-cols-3 gap-4">
@@ -573,21 +523,74 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
         </div>
 
         {/* RIGHT COLUMN: THE UNDERSTANDING MOMENT & COMMUNICATION CANVAS (5 COLUMNS) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="lg:col-span-5 flex flex-col gap-4">
           
           {/* STAGE 1: DETECTED CONCEPTS FLOW (UNDERSTAND) */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="text-xl font-serif italic text-[#1E3A2B]">Understand</h2>
+              <div className="flex items-center gap-2">
+                {/* Context Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsContextOpen(!isContextOpen)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] text-xs font-semibold border border-[#E3DAC9] transition-colors whitespace-nowrap"
+                    title="Translation Context"
+                    aria-expanded={isContextOpen}
+                    aria-haspopup="true"
+                  >
+                    <BrainCircuit className="w-3.5 h-3.5 shrink-0" />
+                    <span className="hidden sm:inline">Context</span>
+                    <span className="text-[10px] text-[#72786F] font-medium hidden sm:inline">({registerMode})</span>
+                    <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${isContextOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-              <button
-                onClick={handleClearTokens}
-                className="text-xs text-[#72786F] hover:text-[#C87A5B] transition-colors flex items-center gap-1"
-                title="Clear tokens"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Clear</span>
-              </button>
+                  {/* Context Popover */}
+                  {isContextOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                      <div className="bg-white border border-[#E3DAC9] rounded-xl shadow-lg p-1.5 min-w-[140px]">
+                        {(['Casual', 'Academic', 'Medical'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => {
+                              setRegisterMode(mode);
+                              setIsContextOpen(false);
+                              onShowToast(`Switched translation register to ${mode}`);
+                            }}
+                            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                              registerMode === mode
+                                ? 'bg-[#1E3A2B] text-white'
+                                : 'text-[#343832] hover:bg-[#F2ECE1]'
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="absolute right-2 -top-1 w-2 h-2 bg-white border-l border-t border-[#E3DAC9] rotate-45" />
+                    </div>
+                  )}
+
+                  {/* Click outside to close */}
+                  {isContextOpen && (
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsContextOpen(false)}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+
+                {/* Clear Button */}
+                <button
+                  onClick={handleClearTokens}
+                  className="text-xs text-[#72786F] hover:text-[#C87A5B] transition-colors flex items-center gap-1"
+                  title="Clear tokens"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Clear</span>
+                </button>
+              </div>
             </div>
 
             {/* Dynamic Concept Chips in Vaani Brand Palette */}
@@ -684,78 +687,135 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                 )}
               </div>
 
-              {/* Ready to Broadcast badge row */}
-              <div className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#F2ECE1] flex items-center justify-center text-[#1E3A2B]">
-                    <Volume2 className="w-4 h-4" />
+              {/* Voice & Speed Controls Row */}
+              <div className="pt-4 border-t border-[#F2ECE1] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Voice Selector - Custom Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsVoiceOpen(!isVoiceOpen)}
+                      className="flex items-center gap-2 px-3 py-2 bg-[#FAF3E3] rounded-xl border border-[#F2D7CB] transition-colors"
+                      aria-expanded={isVoiceOpen}
+                      aria-haspopup="listbox"
+                    >
+                      <Mic2 className="w-4 h-4 text-[#C87A5B] shrink-0" />
+                      <span className="text-sm font-medium text-[#1E3A2B]">{selectedVoice}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#72786F] transition-transform ${isVoiceOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isVoiceOpen && (
+                      <div className="absolute right-0 top-full mt-1 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                        <div className="bg-white border border-[#E3DAC9] rounded-xl shadow-lg py-1 min-w-[140px]">
+                          {(['Mira', 'Rian'] as const).map((voice) => (
+                            <button
+                              key={voice}
+                              onClick={() => {
+                                setSelectedVoice(voice);
+                                setIsVoiceOpen(false);
+                                onShowToast(`Voice changed to ${voice}`);
+                              }}
+                              className={`w-full px-3 py-2 text-sm font-medium text-left transition-colors ${
+                                selectedVoice === voice
+                                  ? 'bg-[#1E3A2B] text-white'
+                                  : 'text-[#343832] hover:bg-[#F2ECE1]'
+                              }`}
+                            >
+                              {voice}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="absolute right-2 -top-1 w-2 h-2 bg-white border-l border-t border-[#E3DAC9] rotate-45" />
+                      </div>
+                    )}
+                    {isVoiceOpen && (
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setIsVoiceOpen(false)}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-[#1E3A2B] uppercase tracking-widest">
-                      Ready to Broadcast
-                    </span>
-                    <span className="text-[11px] text-[#72786F]">
-                      Voice: {selectedVoice} • {speed.toFixed(1)}x
-                    </span>
+
+                  {/* Speed Slider - Custom Styled */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#F2ECE1] rounded-xl border border-[#E3DAC9] min-w-[200px]">
+                    <Gauge className="w-4 h-4 text-[#1E3A2B] shrink-0" />
+                    <div className="flex-1 relative" style={{ height: '24px' }}>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2.0"
+                        step="0.1"
+                        value={speed}
+                        onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                        className="w-full h-full appearance-none bg-transparent cursor-pointer"
+                        aria-label="Speech speed"
+                        style={{
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                        }}
+                      />
+                      <div className="pointer-events-none absolute inset-0 flex items-center">
+                        <div className="w-full h-1.5 bg-[#E3DAC9] rounded-full" />
+                        <div 
+                          className="h-2 bg-[#1E3A2B] rounded-full" 
+                          style={{ width: `${((speed - 0.5) / 1.5) * 100}%` }}
+                        />
+                      </div>
+                      <div 
+                        className="pointer-events-none absolute top-1/2 -translate-y-1/2"
+                        style={{ left: `${((speed - 0.5) / 1.5) * 100}%` }}
+                      >
+                        <div className="w-4 h-4 bg-[#1E3A2B] rounded-full border-2 border-white shadow-md -translate-x-1/2" />
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono text-[#72786F] w-12 text-right">{speed.toFixed(1)}x</span>
                   </div>
                 </div>
 
+                {/* Rephrase Button */}
                 <button
                   onClick={handleReweave}
-                  className="text-xs text-[#C87A5B] hover:text-[#B56B4E] font-medium flex items-center gap-1 transition-colors"
+                  className="text-xs text-[#C87A5B] hover:text-[#B56B4E] font-medium flex items-center gap-1 transition-colors whitespace-nowrap"
                   title="Cycle alternate phrasing"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Reweave</span>
+                  <span>Rephrase</span>
                 </button>
               </div>
 
-              {/* Syntactic Bridge Explanation Box in Mauve supporting tint */}
-              <div className="p-3.5 rounded-xl bg-[#F5ECEE] border border-[#ECD9DE] flex items-start gap-2.5">
-                <BrainCircuit className="w-4 h-4 text-[#8D656E] shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-[#8D656E] uppercase tracking-wider">
-                    Syntactic Bridge
-                  </span>
-                  <p className="text-xs text-[#5C4249] mt-0.5 leading-relaxed">
-                    {syntacticBridge}
-                  </p>
-                </div>
+              {/* Action Buttons Row */}
+              <div className="mt-4 pt-4 border-t border-[#F2ECE1] grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleSpeakAloud}
+                  className="px-4 py-3.5 bg-[#1E3A2B] hover:bg-[#152A1F] text-white rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  id="btn-speak-aloud"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  <span>{isSpeaking ? 'Speaking...' : 'Speak'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Vaani Translation',
+                        text: sentenceText,
+                      }).catch(() => {});
+                    } else {
+                      handleCopy();
+                    }
+                  }}
+                  className="px-4 py-3.5 bg-white border border-[#E3DAC9] text-[#1E3A2B] rounded-2xl font-bold text-sm shadow-xs hover:bg-[#FDFBF7] flex items-center justify-center gap-2 transition-all"
+                >
+                  {isCopied ? <Check className="w-4 h-4 text-[#1E3A2B]" /> : <Share2 className="w-4 h-4" />}
+                  <span>{isCopied ? 'Copied' : 'Share'}</span>
+                </button>
               </div>
+
+</div>
+
             </div>
 
-            {/* Action Buttons Row */}
-            <div className="mt-auto pt-6 border-t border-[#F2ECE1] grid grid-cols-2 gap-3">
-              <button
-                onClick={handleSpeakAloud}
-                className="px-4 py-3.5 bg-[#1E3A2B] hover:bg-[#152A1F] text-white rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                id="btn-speak-aloud"
-              >
-                <Volume2 className="w-4 h-4" />
-                <span>{isSpeaking ? 'Speaking...' : 'Speak'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: 'Vaani Translation',
-                      text: sentenceText,
-                    }).catch(() => {});
-                  } else {
-                    handleCopy();
-                  }
-                }}
-                className="px-4 py-3.5 bg-white border border-[#E3DAC9] text-[#1E3A2B] rounded-2xl font-bold text-sm shadow-xs hover:bg-[#FDFBF7] flex items-center justify-center gap-2 transition-all"
-              >
-                {isCopied ? <Check className="w-4 h-4 text-[#1E3A2B]" /> : <Share2 className="w-4 h-4" />}
-                <span>{isCopied ? 'Copied' : 'Share'}</span>
-              </button>
-            </div>
-
-          </div>
-
-          {/* Session Recorded Bar */}
+            {/* Session Recorded Bar */}
           <div className="flex items-center justify-between p-4 bg-[#F2ECE1]/60 rounded-2xl border border-[#E3DAC9]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-[#1E3A2B] rounded-full"></div>
