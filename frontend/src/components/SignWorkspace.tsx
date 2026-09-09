@@ -183,6 +183,28 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
     onShowToast('Cleared concept buffer');
   };
 
+  const callTranslateAPI = async (scenario: SimulationScenario) => {
+  try {
+    const signWords = scenario.tokens.map((t) => t.word);
+
+    const response = await fetch('http://localhost:8000/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signs: signWords }),
+    });
+
+    if (!response.ok) throw new Error('API request failed');
+
+    const data = await response.json();
+
+    setSentenceText(data.sentence);
+    onShowToast(`Live API translation: "${data.sentence}"`);
+  } catch (err) {
+    console.warn('Could not reach SignaAI API, using simulated sentence instead:', err);
+    onShowToast('API unavailable — showing simulated result instead.');
+  }
+};
+
   const handleReplayPast = (phrase: string) => {
     speakText(phrase, {
       rate: speed,
@@ -828,9 +850,9 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
               <button
                 key={scenario.key}
                 onClick={() => {
-                  onSelectScenario(scenario);
-                  onShowToast(`Simulating sequence: ${scenario.buttonLabel}`);
-                }}
+  onSelectScenario(scenario);
+  callTranslateAPI(scenario);
+}}
                 className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-xs active:scale-95 ${
                   isSelected
                     ? 'bg-[#1E3A2B] text-white font-bold shadow-sm'
