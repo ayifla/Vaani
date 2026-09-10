@@ -13,11 +13,14 @@ Then open http://localhost:8000/docs to test it in the browser.
 """
 
 import json
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from supabase import create_client
 
 from agents.context_agent import identify_context
 from agents.reconstruction_agent import reconstruct_sentence
@@ -28,6 +31,12 @@ from agents.demo_vocabulary import convert_gestures_to_concepts
 # Same file camera.py saves to when you press "S", and the same
 # file app.py (Streamlit) already reads for "Load Camera Sequence".
 SEQUENCE_FILE = Path(__file__).parent / "data" / "current_sequence.json"
+load_dotenv()
+
+supabase = create_client(
+    os.environ["SUPABASE_URL"],
+    os.environ["SUPABASE_SECRET_KEY"],
+)
 
 
 app = FastAPI(title="SignaAI API")
@@ -88,6 +97,12 @@ def translate(request: TranslateRequest):
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
+    supabase.table("translations").insert({
+        "signs": ", ".join(signs),
+        "sentence": sentence,
+        "context": context.get("name", ""),
+    }).execute()
+
     return {
         "signs": signs,
         "context": context,
@@ -136,6 +151,12 @@ def detect():
     context = identify_context(signs)
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
+
+    supabase.table("translations").insert({
+        "signs": ", ".join(signs),
+        "sentence": sentence,
+        "context": context.get("name", ""),
+    }).execute()
 
     return {
         "signs": signs,
