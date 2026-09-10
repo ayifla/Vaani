@@ -93,29 +93,35 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
 
   // Handle Real Camera stream
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    if (isLiveCamera && isCameraActive) {
-      navigator.mediaDevices
-        ?.getUserMedia({ video: { facingMode: 'user', width: 1280, height: 720 } })
-        .then((s) => {
-          stream = s;
-          if (videoRef.current) {
-            videoRef.current.srcObject = s;
-          }
-        })
-        .catch((err) => {
-          console.warn('Camera access not granted or unavailable:', err);
-          setIsLiveCamera(false);
-          onShowToast('Webcam unavailable. Switched to high-fidelity simulated camera feed.');
-        });
-    }
+  let stream: MediaStream | null = null;
+  if (isLiveCamera && isCameraActive) {
+    navigator.mediaDevices
+      ?.getUserMedia({ video: { facingMode: 'user', width: 1280, height: 720 } })
+      .then((s) => {
+        stream = s;
+        if (videoRef.current) {
+          videoRef.current.srcObject = s;
+        }
+      })
+      .catch((err) => {
+        console.warn('Camera access not granted or unavailable:', err);
+        setIsLiveCamera(false);
+        onShowToast('Webcam unavailable. Switched to high-fidelity simulated camera feed.');
+      });
+  }
 
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [isLiveCamera, isCameraActive, onShowToast]);
+  return () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+  };
+}, [isLiveCamera, isCameraActive, onShowToast]);
+
+useEffect(() => {                          // <-- new one starts here
+  const interval = setInterval(checkForNewSign, 2000);
+  return () => clearInterval(interval);
+}, []);
+
 
   // Spacebar shortcut to Speak Aloud
   useEffect(() => {
@@ -218,6 +224,32 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   }
 };
 
+const lastDetectedRef = useRef<string>('');
+
+const checkForNewSign = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/detect', {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      // No sequence saved yet, or camera hasn't been used - stay quiet
+      return;
+    }
+
+    const data = await response.json();
+    const signsKey = data.signs.join(',');
+
+    // Only update if this is a genuinely new sign sequence
+    if (signsKey !== lastDetectedRef.current) {
+      lastDetectedRef.current = signsKey;
+      setSentenceText(data.sentence);
+      onShowToast(`Detected from camera: "${data.sentence}"`);
+    }
+  } catch (err) {
+    // API not reachable - stay quiet, don't spam toasts every 2 seconds
+  }
+};
   const handleReplayPast = (phrase: string) => {
     // Map friendly voice names to actual SpeechSynthesis voice preferences
     const voiceMap: Record<string, string[]> = {
@@ -477,6 +509,14 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                 >
                   <BrainCircuit className="w-4 h-4" />
                 </button>
+                <button
+  onClick={callDetectAPI}
+  className="p-2.5 rounded-xl bg-[#C87A5B] hover:bg-[#B56B4E] text-white border border-[#E3DAC9] transition-colors"
+  title="Check what was signed on the Python camera (press S in camera.py first)"
+>
+  <Hand className="w-4 h-4" />
+</button>
+
               </div>
 
               {/* Sensitivity */}
