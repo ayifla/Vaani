@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-surface: #F8F5EE;
   --color-surface-dim: #F2ECE1;
@@ -9,24 +11,24 @@
   --color-surface-mid: #F8F5EE;
   --color-surface-high: #EBE3D4;
   --color-surface-highest: #E3DAC9;
-  
-  /* Vaani Brand Identity Palette */
+
+  /* Vaani Brand Identity Palette (existing app) */
   --color-brand-forest: #1E3A2B;
   --color-brand-forest-dark: #152A1F;
   --color-brand-forest-light: #2A4F3C;
   --color-brand-forest-tint: #E7EFEA;
-  
+
   --color-brand-terracotta: #C87A5B;
   --color-brand-terracotta-dark: #B56B4E;
   --color-brand-terracotta-tint: #FAF0EB;
-  
+
   --color-brand-mauve: #8D656E;
   --color-brand-mauve-tint: #F5ECEE;
-  
+
   --color-brand-sunlit: #E5B25D;
   --color-brand-sunlit-dark: #C79237;
   --color-brand-sunlit-tint: #FAF3E3;
-  
+
   --color-brand-ivory: #F8F5EE;
   --color-brand-ivory-cream: #F2ECE1;
   --color-brand-ivory-border: #E3DAC9;
@@ -37,7 +39,36 @@
   --color-text-body: #343832;
   --color-text-muted: #72786F;
   --color-text-light: #9DA39A;
-  
+
+  /* Landing Page Palette (from Stitch) */
+  --color-forest: #183B2B;
+  --color-forest-deep: #0F271D;
+  --color-forest-light: #24523C;
+  --color-forest-surface: #EBF1ED;
+
+  --color-terracotta: #DE795D;
+  --color-terracotta-deep: #C85A3E;
+  --color-terracotta-soft: #F5DDD5;
+
+  --color-mauve: #8C7A8E;
+  --color-mauve-subtle: #E8E4E9;
+  --color-mauve-dark: #5C4E5E;
+
+  --color-sunlit: #E5A93C;
+  --color-sunlit-soft: #FBF2DF;
+  --color-sunlit-warm: #F3B84E;
+
+  --color-ivory: #FAF7F2;
+  --color-ivory-card: #FFFFFF;
+  --color-ivory-dim: #F2ECE4;
+  --color-ivory-border: #E5DED4;
+
+  --color-night: #0E1612;
+  --color-night-card: #15221C;
+  --color-night-surface: #1B2C24;
+  --color-night-border: #283D33;
+  --color-night-muted: #9BB0A4;
+
   --font-serif: "Newsreader", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
@@ -77,4 +108,24 @@
 
 .animate-glow {
   animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* Landing page wave animations (voice playback indicator) */
+@keyframes wave-bar {
+  0%, 100% { height: 4px; }
+  50% { height: 24px; }
+}
+
+.wave-anim-1 { animation: wave-bar 1.1s ease-in-out infinite 0.1s; }
+.wave-anim-2 { animation: wave-bar 1.3s ease-in-out infinite 0.3s; }
+.wave-anim-3 { animation: wave-bar 1.0s ease-in-out infinite 0.5s; }
+.wave-anim-4 { animation: wave-bar 1.4s ease-in-out infinite 0.2s; }
+.wave-anim-5 { animation: wave-bar 1.2s ease-in-out infinite 0.4s; }
+
+/* Tactile micro-interactions */
+.tactile-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.tactile-card:hover {
+  transform: translateY(-2px);
 }

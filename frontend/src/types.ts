@@ -58,3 +58,4 @@ export interface SimulationScenario {
 export type WebScreen = 'sign-workspace' | 'conversation-history' | 'practice-vocabulary' | 'settings';
 export type MobileScreen = 'sign' | 'history' | 'practice' | 'settings';
 export type AppMode = 'web' | 'mobile_mockup';
+export type Theme = 'light' | 'dark';

@@ -1,0 +1,6 @@
+{
+  "name": "Vaani — Signs that Speak",
+  "description": "Intelligent sign-language communication platform that reconstructs detected sign concepts into natural, expressive spoken sentences.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

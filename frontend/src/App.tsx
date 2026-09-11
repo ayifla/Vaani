@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { SignWorkspace } from './components/SignWorkspace';
 import { ConversationHistoryView } from './components/ConversationHistoryView';
@@ -12,10 +12,40 @@ import { SettingsView } from './components/SettingsView';
 import { MobileAppMockup } from './components/MobileAppMockup';
 import { Footer } from './components/Footer';
 import { Toast } from './components/Toast';
-import { AppMode, ConversationExchange, SimulationScenario, WebScreen } from './types';
+import { LandingPage } from './components/LandingPage';
+import { LoginPage } from './components/LoginPage';
+import { AppMode, ConversationExchange, SimulationScenario, WebScreen, Theme } from './types';
 import { INITIAL_CONVERSATION_HISTORY, SIMULATION_SCENARIOS } from './data/mockData';
 
 export default function App() {
+  // Landing / Login / main App switcher
+  const [showLanding, setShowLanding] = useState<boolean>(true);
+  const [showLogin, setShowLogin] = useState<boolean>(false);
+
+  // Theme - shared across landing, login, and workspace
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vaani-theme') as Theme | null;
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('vaani-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   // Main view mode: 'web' is default as requested!
   const [appMode, setAppMode] = useState<AppMode>('web');
   const [currentWebScreen, setCurrentWebScreen] = useState<WebScreen>('sign-workspace');
@@ -58,9 +88,34 @@ export default function App() {
     setConversationHistory([]);
   };
 
+  // Landing page "Get Started" -> go to Login
+  if (showLanding) {
+    return (
+      <LandingPage
+        onGetStarted={() => {
+          setShowLanding(false);
+          setShowLogin(true);
+        }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
+  // Login page -> on success, go to main app
+  if (showLogin) {
+    return (
+      <LoginPage
+        onLoginSuccess={() => {
+          setShowLogin(false);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className={`min-h-screen flex flex-col bg-[#F8F5EE] text-[#343832] ${contrastMode ? 'contrast-125 saturate-110' : ''}`}>
-      
+    <div className={`min-h-screen flex flex-col bg-[#F8F5EE] dark:bg-[#0E1612] text-[#343832] dark:text-[#EDE8E1] transition-colors duration-300 ${contrastMode ? 'contrast-125 saturate-110' : ''}`}>
+
       {/* Top Header - Always visible with navigation and "Vaani App" trigger */}
       <Header
         currentScreen={currentWebScreen}
@@ -74,10 +129,12 @@ export default function App() {
           setAppMode('mobile_mockup');
           showToast('Opening Vaani Mobile App interactive preview...');
         }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Experience View Switcher */}
-      <main className="flex-1 w-full pt-10 bg-[#F8F5EE]">
+      <main className="flex-1 w-full pt-10 bg-[#F8F5EE] dark:bg-[#0E1612] transition-colors duration-300">
         {appMode === 'mobile_mockup' ? (
           /* DEDICATED SMARTPHONE APP PREVIEW */
           <MobileAppMockup

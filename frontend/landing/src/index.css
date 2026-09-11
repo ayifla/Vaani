@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --color-forest: #183B2B;
+  --color-forest-deep: #0F271D;
+  --color-forest-light: #24523C;
+  --color-forest-surface: #EBF1ED;
+
+  --color-terracotta: #DE795D;
+  --color-terracotta-deep: #C85A3E;
+  --color-terracotta-soft: #F5DDD5;
+
+  --color-mauve: #8C7A8E;
+  --color-mauve-subtle: #E8E4E9;
+  --color-mauve-dark: #5C4E5E;
+
+  --color-sunlit: #E5A93C;
+  --color-sunlit-soft: #FBF2DF;
+  --color-sunlit-warm: #F3B84E;
+
+  --color-ivory: #FAF7F2;
+  --color-ivory-card: #FFFFFF;
+  --color-ivory-dim: #F2ECE4;
+  --color-ivory-border: #E5DED4;
+
+  --color-night: #0E1612;
+  --color-night-card: #15221C;
+  --color-night-surface: #1B2C24;
+  --color-night-border: #283D33;
+  --color-night-muted: #9BB0A4;
+}
+
+@keyframes wave-bar {
+  0%, 100% { height: 4px; }
+  50% { height: 24px; }
+}
+
+.wave-anim-1 { animation: wave-bar 1.1s ease-in-out infinite 0.1s; }
+.wave-anim-2 { animation: wave-bar 1.3s ease-in-out infinite 0.3s; }
+.wave-anim-3 { animation: wave-bar 1.0s ease-in-out infinite 0.5s; }
+.wave-anim-4 { animation: wave-bar 1.4s ease-in-out infinite 0.2s; }
+.wave-anim-5 { animation: wave-bar 1.2s ease-in-out infinite 0.4s; }
+
+/* Tactile micro-interactions */
+.tactile-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.tactile-card:hover {
+  transform: translateY(-2px);
+}
+
