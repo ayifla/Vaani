@@ -36,6 +36,7 @@ interface SignWorkspaceProps {
   conversationHistory: ConversationExchange[];
   onAddExchange: (exchange: ConversationExchange) => void;
   onShowToast: (message: string) => void;
+  onSelectScreen: (screen: string) => void;
 }
 
 export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
@@ -44,6 +45,7 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   conversationHistory,
   onAddExchange,
   onShowToast,
+  onSelectScreen,
 }) => {
   // Vision & Camera states
   const [isLiveCamera, setIsLiveCamera] = useState<boolean>(false);
@@ -58,6 +60,9 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   // Context Popover state
   const [isContextOpen, setIsContextOpen] = useState<boolean>(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLButtonElement>(null);
+  const onShowToastRef = useRef(onShowToast);
+  onShowToastRef.current = onShowToast;
 
   // Voice & Speech state (local, no longer from props)
   const [selectedVoice, setSelectedVoice] = useState<'Mira' | 'Rian'>('Mira');
@@ -91,37 +96,32 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
     setAlternateIndex(0);
   }, [currentScenario]);
 
-  // Handle Real Camera stream
+// Handle Real Camera stream
   useEffect(() => {
-  let stream: MediaStream | null = null;
-  if (isLiveCamera && isCameraActive) {
-    navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: 'user', width: 1280, height: 720 } })
-      .then((s) => {
-        stream = s;
-        if (videoRef.current) {
-          videoRef.current.srcObject = s;
-        }
-      })
-      .catch((err) => {
-        console.warn('Camera access not granted or unavailable:', err);
-        setIsLiveCamera(false);
-        onShowToast('Webcam unavailable. Switched to high-fidelity simulated camera feed.');
-      });
-  }
-
-  return () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    let stream: MediaStream | null = null;
+    if (isLiveCamera && isCameraActive) {
+      navigator.mediaDevices
+        ?.getUserMedia({ video: { facingMode: 'user', width: 1280, height: 720 } })
+        .then((s) => {
+          stream = s;
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+          }
+        })
+        .catch((err) => {
+          console.warn('Camera access not granted or unavailable:', err);
+          setIsLiveCamera(false);
+          setIsCameraActive(false);
+          onShowToastRef.current('Webcam unavailable. Switched to high-fidelity simulated camera feed.');
+        });
     }
-  };
-}, [isLiveCamera, isCameraActive, onShowToast]);
 
-useEffect(() => {                          // <-- new one starts here
-  const interval = setInterval(checkForNewSign, 2000);
-  return () => clearInterval(interval);
-}, []);
-
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [isLiveCamera, isCameraActive]);
 
   // Spacebar shortcut to Speak Aloud
   useEffect(() => {
@@ -202,54 +202,6 @@ useEffect(() => {                          // <-- new one starts here
     onShowToast('Cleared concept buffer');
   };
 
-  const callTranslateAPI = async (scenario: SimulationScenario) => {
-  try {
-    const signWords = scenario.tokens.map((t) => t.word);
-
-    const response = await fetch('http://localhost:8000/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signs: signWords }),
-    });
-
-    if (!response.ok) throw new Error('API request failed');
-
-    const data = await response.json();
-
-    setSentenceText(data.sentence);
-    onShowToast(`Live API translation: "${data.sentence}"`);
-  } catch (err) {
-    console.warn('Could not reach SignaAI API, using simulated sentence instead:', err);
-    onShowToast('API unavailable — showing simulated result instead.');
-  }
-};
-
-const lastDetectedRef = useRef<string>('');
-
-const checkForNewSign = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/detect', {
-      method: 'GET',
-    });
-
-    if (!response.ok) {
-      // No sequence saved yet, or camera hasn't been used - stay quiet
-      return;
-    }
-
-    const data = await response.json();
-    const signsKey = data.signs.join(',');
-
-    // Only update if this is a genuinely new sign sequence
-    if (signsKey !== lastDetectedRef.current) {
-      lastDetectedRef.current = signsKey;
-      setSentenceText(data.sentence);
-      onShowToast(`Detected from camera: "${data.sentence}"`);
-    }
-  } catch (err) {
-    // API not reachable - stay quiet, don't spam toasts every 2 seconds
-  }
-};
   const handleReplayPast = (phrase: string) => {
     // Map friendly voice names to actual SpeechSynthesis voice preferences
     const voiceMap: Record<string, string[]> = {
@@ -320,7 +272,7 @@ const checkForNewSign = async () => {
           </div>
 
           {/* Camera Viewport Container with Forest Slate backdrop */}
-          <div className="relative w-full rounded-[32px] overflow-hidden bg-[#152019] border-4 border-white shadow-xl aspect-[16/10] sm:aspect-[16/9]">
+          <div className="relative w-full rounded-[32px] overflow-hidden bg-[#152019] border-4 border-white shadow-xl aspect-[16/9]">
             
             {/* Real Live Camera Feed - only when active */}
             {isLiveCamera && isCameraActive ? (
@@ -509,14 +461,6 @@ const checkForNewSign = async () => {
                 >
                   <BrainCircuit className="w-4 h-4" />
                 </button>
-                <button
-  onClick={callDetectAPI}
-  className="p-2.5 rounded-xl bg-[#C87A5B] hover:bg-[#B56B4E] text-white border border-[#E3DAC9] transition-colors"
-  title="Check what was signed on the Python camera (press S in camera.py first)"
->
-  <Hand className="w-4 h-4" />
-</button>
-
               </div>
 
               {/* Sensitivity */}
@@ -535,63 +479,30 @@ const checkForNewSign = async () => {
                 </button>
               </div>
 
-            </div>
-          )}
-
-          {/* Vision Analytics Micro Panel */}
-          <div className="grid grid-cols-3 gap-4">
-            
-            <div className="p-4 rounded-2xl bg-white border border-[#E3DAC9] shadow-xs flex flex-col gap-1">
-              <span className="text-[11px] uppercase tracking-wider text-[#72786F] font-semibold">
-                Spatial Range
-              </span>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-[#1E3A2B]">1.8 m</span>
-                <span className="w-2 h-2 rounded-full bg-[#1E3A2B]" />
-              </div>
-              <div className="w-full h-1.5 bg-[#F2ECE1] rounded-full overflow-hidden mt-1">
-                <div className="h-full bg-[#1E3A2B] rounded-full" style={{ width: '88%' }}></div>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-[#E3DAC9] shadow-xs flex flex-col gap-1">
-              <span className="text-[11px] uppercase tracking-wider text-[#72786F] font-semibold">
-                Fingerspelling Mode
-              </span>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-[#C87A5B]">Auto-Blend</span>
-                <Sparkles className="w-3.5 h-3.5 text-[#E5B25D]" />
-              </div>
-              <div className="w-full h-1.5 bg-[#F2ECE1] rounded-full overflow-hidden mt-1">
-                <div className="h-full bg-[#C87A5B] rounded-full" style={{ width: '95%' }}></div>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-[#E3DAC9] shadow-xs flex flex-col gap-1">
-              <span className="text-[11px] uppercase tracking-wider text-[#72786F] font-semibold">
-                Dialect Engine
-              </span>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-[#8D656E] truncate">{dialect}</span>
-                <Hand className="w-3.5 h-3.5 text-[#8D656E]" />
-              </div>
-              <div className="w-full h-1.5 bg-[#F2ECE1] rounded-full overflow-hidden mt-1">
-                <div className="h-full bg-[#8D656E] rounded-full" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-
           </div>
+)}
 
         </div>
 
         {/* RIGHT COLUMN: THE UNDERSTANDING MOMENT & COMMUNICATION CANVAS (5 COLUMNS) */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <div className="lg:col-span-5 flex flex-col">
           
-          {/* STAGE 1: DETECTED CONCEPTS FLOW (UNDERSTAND) */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
+          {/* UNIFIED UNDERSTAND + COMMUNICATE SECTION */}
+          <div className="bg-white border border-[#E3DAC9] rounded-[32px] p-5 flex flex-col gap-4 shadow-md">
+            
+            {/* UNDERSTAND HEADING & CONTROLS */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[#E3DAC9]/40">
               <h2 className="text-xl font-serif italic text-[#1E3A2B]">Understand</h2>
               <div className="flex items-center gap-2">
+                {/* Clear Button */}
+                <button
+                  onClick={handleClearTokens}
+                  className="text-xs text-[#72786F] hover:text-[#C87A5B] transition-colors flex items-center gap-1"
+                  title="Clear tokens"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Clear</span>
+                </button>
                 {/* Context Dropdown */}
                 <div className="relative">
                   <button
@@ -642,23 +553,13 @@ const checkForNewSign = async () => {
                     />
                   )}
                 </div>
-
-                {/* Clear Button */}
-                <button
-                  onClick={handleClearTokens}
-                  className="text-xs text-[#72786F] hover:text-[#C87A5B] transition-colors flex items-center gap-1"
-                  title="Clear tokens"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Clear</span>
-                </button>
               </div>
             </div>
 
-            {/* Dynamic Concept Chips in Vaani Brand Palette */}
-            <div className="flex flex-wrap gap-2 items-center min-h-[44px]">
+            {/* Dynamic Concept Chips */}
+            <div className="flex flex-wrap gap-1.5 items-center min-h-[32px]">
               {tokens.length === 0 ? (
-                <div className="text-xs text-[#9DA39A] py-2 italic font-medium leading-relaxed">
+                <div className="text-[11px] text-[#9DA39A] py-1 italic font-medium leading-relaxed">
                   Reconstructing sign intent into natural syntax...
                 </div>
               ) : (
@@ -667,14 +568,14 @@ const checkForNewSign = async () => {
                   return (
                     <React.Fragment key={token.id}>
                       <span
-                        className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                        className={`px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all flex items-center gap-1 cursor-pointer ${
                           isLast
-                            ? 'bg-[#1E3A2B] text-white shadow-sm'
+                            ? 'bg-[#1E3A2B] text-white shadow-xs'
                             : 'bg-white border border-[#E3DAC9] text-[#1E3A2B] hover:bg-[#FDFBF7]'
                         }`}
                       >
                         <span>{token.word}</span>
-                        <span className={`text-[10px] ${isLast ? 'text-white/70' : 'text-[#9DA39A]'}`}>
+                        <span className={`text-[9px] ${isLast ? 'text-white/70' : 'text-[#9DA39A]'}`}>
                           {token.time}
                         </span>
                         <button
@@ -682,15 +583,15 @@ const checkForNewSign = async () => {
                             e.stopPropagation();
                             handleRemoveToken(token.id);
                           }}
-                          className="hover:opacity-80 transition-opacity ml-1"
+                          className="hover:opacity-80 transition-opacity ml-0.5"
                           title="Remove concept"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-2.5 h-2.5" />
                         </button>
                       </span>
 
                       {index < tokens.length - 1 && (
-                        <ArrowRight className="w-3 h-3 text-[#9DA39A] shrink-0" />
+                        <ArrowRight className="w-2.5 h-2.5 text-[#9DA39A] shrink-0" />
                       )}
                     </React.Fragment>
                   );
@@ -698,63 +599,53 @@ const checkForNewSign = async () => {
               )}
             </div>
 
-            <p className="text-xs text-[#9DA39A] font-medium leading-relaxed italic">
-              Reconstructing sign intent into natural syntax...
-            </p>
-          </div>
-
-          {/* STAGE 2: COMMUNICATE & SYNTHESIS CARD */}
-          <div className="flex-1 flex flex-col bg-white border border-[#E3DAC9] rounded-[32px] p-6 shadow-md relative overflow-hidden">
-            
-            {/* Background circular decoration in warm ivory cream */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#F8F5EE] -mr-16 -mt-16 rounded-full opacity-60 pointer-events-none" />
-
-            <div className="flex items-center justify-between mb-4">
+            {/* COMMUNICATE HEADING & CERTAINTY */}
+            <div className="flex items-center justify-between pt-3 border-t border-[#E3DAC9]/40">
               <h2 className="text-xl font-serif italic text-[#1E3A2B]">Communicate</h2>
               <span className="px-3 py-1 rounded-full bg-[#FAF0EB] text-[#C87A5B] border border-[#F2D7CB] text-xs font-bold">
                 {certainty} Certainty
               </span>
             </div>
 
-            <div className="flex-1 space-y-4">
-              {/* Synthesized quote box in warm ivory surface */}
-              <div className="p-5 bg-[#FDFBF7] border border-[#F2ECE1] rounded-2xl shadow-xs">
-                {isEditing ? (
-                  <div className="flex flex-col gap-2">
-                    <textarea
-                      value={editedInput}
-                      onChange={(e) => setEditedInput(e.target.value)}
-                      rows={3}
-                      className="w-full p-2.5 rounded-xl bg-white border border-[#1E3A2B] text-[#1E3A2B] font-serif text-lg focus:outline-none"
-                    />
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className="px-3 py-1 rounded-lg text-xs text-[#72786F] hover:bg-[#F2ECE1]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleSaveEdit}
-                        className="px-4 py-1 rounded-lg bg-[#1E3A2B] text-white text-xs font-bold shadow-xs"
-                      >
-                        Save
-                      </button>
-                    </div>
+            {/* Synthesized Sentence - Direct Display */}
+            <div className="py-2">
+              {isEditing ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={editedInput}
+                    onChange={(e) => setEditedInput(e.target.value)}
+                    rows={3}
+                    className="w-full p-2.5 rounded-xl bg-white border border-[#1E3A2B] text-[#1E3A2B] font-serif text-lg focus:outline-none"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-3 py-1 rounded-lg text-xs text-[#72786F] hover:bg-[#F2ECE1]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveEdit}
+                      className="px-4 py-1 rounded-lg bg-[#1E3A2B] text-white text-xs font-bold shadow-xs"
+                    >
+                      Save
+                    </button>
                   </div>
-                ) : (
-                  <p className="text-xl leading-relaxed text-[#1E3A2B] font-serif">
-                    {sentenceText}
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <p className="text-xl leading-relaxed text-[#1E3A2B] font-serif">
+                  {sentenceText}
+                </p>
+              )}
+            </div>
 
-              {/* Voice & Speed Controls Row */}
-              <div className="pt-4 border-t border-[#F2ECE1] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-wrap">
+            {/* Voice & Speed Controls Row */}
+            <div className="pt-3 border-t border-[#E3DAC9]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                   {/* Voice Selector - Custom Dropdown */}
                   <div className="relative">
                     <button
+                      ref={dropdownRef}
                       onClick={() => setIsVoiceOpen(!isVoiceOpen)}
                       className="flex items-center gap-2 px-3 py-2 bg-[#FAF3E3] rounded-xl border border-[#F2D7CB] transition-colors"
                       aria-expanded={isVoiceOpen}
@@ -765,7 +656,10 @@ const checkForNewSign = async () => {
                       <ChevronDown className={`w-4 h-4 text-[#72786F] transition-transform ${isVoiceOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isVoiceOpen && (
-                      <div className="absolute right-0 top-full mt-1 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                      <div className="fixed z-50 animate-in fade-in-0 zoom-in-95 duration-150" style={{
+                        top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + 8 : 0,
+                        right: dropdownRef.current ? window.innerWidth - dropdownRef.current.getBoundingClientRect().right : 0
+                      }}>
                         <div className="bg-white border border-[#E3DAC9] rounded-xl shadow-lg py-1 min-w-[140px]">
                           {(['Mira', 'Rian'] as const).map((voice) => (
                             <button
@@ -785,7 +679,6 @@ const checkForNewSign = async () => {
                             </button>
                           ))}
                         </div>
-                        <div className="absolute right-2 -top-1 w-2 h-2 bg-white border-l border-t border-[#E3DAC9] rotate-45" />
                       </div>
                     )}
                     {isVoiceOpen && (
@@ -797,10 +690,10 @@ const checkForNewSign = async () => {
                     )}
                   </div>
 
-                  {/* Speed Slider - Custom Styled */}
+                  {/* Speed Slider - Clean Track with Green Knob */}
                   <div className="flex items-center gap-2 px-3 py-2 bg-[#F2ECE1] rounded-xl border border-[#E3DAC9] min-w-[200px]">
                     <Gauge className="w-4 h-4 text-[#1E3A2B] shrink-0" />
-                    <div className="flex-1 relative" style={{ height: '24px' }}>
+                    <div className="flex-1 relative" style={{ height: '28px' }}>
                       <input
                         type="range"
                         min="0.5"
@@ -816,17 +709,13 @@ const checkForNewSign = async () => {
                         }}
                       />
                       <div className="pointer-events-none absolute inset-0 flex items-center">
-                        <div className="w-full h-1.5 bg-[#E3DAC9] rounded-full" />
-                        <div 
-                          className="h-2 bg-[#1E3A2B] rounded-full" 
-                          style={{ width: `${((speed - 0.5) / 1.5) * 100}%` }}
-                        />
+                        <div className="w-full h-2 bg-[#E3DAC9] rounded-full" />
                       </div>
                       <div 
-                        className="pointer-events-none absolute top-1/2 -translate-y-1/2"
+                        className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
                         style={{ left: `${((speed - 0.5) / 1.5) * 100}%` }}
                       >
-                        <div className="w-4 h-4 bg-[#1E3A2B] rounded-full border-2 border-white shadow-md -translate-x-1/2" />
+                        <div className="w-5 h-5 bg-[#1E3A2B] rounded-full shadow-lg -translate-x-1/2 border-2 border-white" />
                       </div>
                     </div>
                     <span className="text-xs font-mono text-[#72786F] w-12 text-right">{speed.toFixed(1)}x</span>
@@ -845,7 +734,7 @@ const checkForNewSign = async () => {
               </div>
 
               {/* Action Buttons Row */}
-              <div className="mt-4 pt-4 border-t border-[#F2ECE1] grid grid-cols-2 gap-3">
+              <div className="pt-3 border-t border-[#E3DAC9]/40 grid grid-cols-2 gap-3">
                 <button
                   onClick={handleSpeakAloud}
                   className="px-4 py-3.5 bg-[#1E3A2B] hover:bg-[#152A1F] text-white rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
@@ -873,100 +762,50 @@ const checkForNewSign = async () => {
                 </button>
               </div>
 
-</div>
-
-            </div>
-
-            {/* Session Recorded Bar */}
-          <div className="flex items-center justify-between p-4 bg-[#F2ECE1]/60 rounded-2xl border border-[#E3DAC9]">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[#1E3A2B] rounded-full"></div>
-              <span className="text-[10px] uppercase font-bold text-[#1E3A2B] tracking-tighter">
-                Session Recorded
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-[#72786F]">
-              ID: VN-2025-819
-            </span>
-          </div>
-
-          {/* Past Exchanges Mini Stream */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-bold text-[#1E3A2B] flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 text-[#1E3A2B]" />
-                <span>Recent Library Logs</span>
-              </span>
-              <span className="text-[11px] text-[#72786F]">Today • {conversationHistory.length} items</span>
-            </div>
-
-            {conversationHistory.slice(0, 2).map((item) => (
-              <div
-                key={item.id}
-                className="p-3.5 rounded-2xl bg-white border border-[#E3DAC9] shadow-xs flex flex-col gap-1 hover:border-[#1E3A2B]/40 transition-colors"
-              >
-                <div className="flex items-center justify-between text-xs text-[#72786F]">
-                  <span>{item.time} • {item.tokens.length} signs</span>
-                  <button
-                    onClick={() => handleReplayPast(item.sentence)}
-                    className="text-[#C87A5B] font-semibold hover:underline flex items-center gap-1 text-[11px]"
-                  >
-                    <Volume2 className="w-3 h-3" />
-                    <span>Replay</span>
-                  </button>
-                </div>
-
-                <p className="font-serif text-sm text-[#1E3A2B]">
-                  {item.sentence}
-                </p>
+            {/* Recent Library Logs - compact */}
+            <div className="pt-3 border-t border-[#E3DAC9]/40">
+              <div className="flex items-center justify-between px-1 mb-1.5">
+                <span className="text-xs font-bold text-[#1E3A2B] flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-[#1E3A2B]" />
+                  <span>Recent Library Logs</span>
+                </span>
+                <button
+                  onClick={() => onSelectScreen?.('conversation-history')}
+                  className="text-[11px] text-[#C87A5B] hover:underline flex items-center gap-0.5 font-medium"
+                >
+                  <span>View all in Library</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
-            ))}
-          </div>
 
-        </div>
+              {conversationHistory.slice(0, 2).map((item) => (
+                <div
+                  key={item.id}
+                  className="p-2.5 rounded-lg bg-white border border-[#E3DAC9]/50 shadow-xs flex flex-col gap-1 hover:border-[#1E3A2B]/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-xs text-[#72786F]">
+                    <span>{item.time} • {item.tokens.length} signs</span>
+                    <button
+                      onClick={() => handleReplayPast(item.sentence)}
+                      className="text-[#C87A5B] font-semibold hover:underline flex items-center gap-1 text-[11px]"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                      <span>Replay</span>
+                    </button>
+                  </div>
 
-      </div>
+                  <p className="font-serif text-sm text-[#1E3A2B]">
+                    {item.sentence}
+                  </p>
+                </div>
+              ))}
+            </div>
 
-      {/* 3. INTERACTIVE SIMULATION DOCK: TRY SAMPLE SIGNS */}
-      <div className="w-full p-5 rounded-[28px] bg-white border border-[#E3DAC9] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-[#FAF3E3] border border-[#E5B25D]/30 flex items-center justify-center text-[#E5B25D]">
-            <Lightbulb className="w-5 h-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-[#1E3A2B]">Simulate Sign Sequence</span>
-            <span className="text-xs text-[#72786F]">
-              Test the AI neural translation pipeline with sample sign streams
-            </span>
-          </div>
-        </div>
-
-        {/* Quick sample scenario triggers */}
-        <div className="flex items-center flex-wrap gap-2">
-          {Object.values(SIMULATION_SCENARIOS).map((scenario) => {
-            const isSelected = currentScenario.key === scenario.key;
-            return (
-              <button
-                key={scenario.key}
-                onClick={() => {
-  onSelectScenario(scenario);
-  callTranslateAPI(scenario);
-}}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-xs active:scale-95 ${
-                  isSelected
-                    ? 'bg-[#1E3A2B] text-white font-bold shadow-sm'
-                    : 'bg-[#FDFBF7] text-[#1E3A2B] hover:bg-[#F2ECE1] border border-[#E3DAC9]'
-                }`}
-              >
-                {scenario.buttonLabel}
-              </button>
-            );
-          })}
         </div>
 
       </div>
 
     </div>
+  </div>
   );
 };

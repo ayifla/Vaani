@@ -159,6 +159,7 @@ export default function App() {
                   conversationHistory={conversationHistory}
                   onAddExchange={handleAddConversationExchange}
                   onShowToast={showToast}
+                  onSelectScreen={setCurrentWebScreen}
                 />
               )}
 
