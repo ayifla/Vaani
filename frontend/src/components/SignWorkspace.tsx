@@ -222,7 +222,7 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-10 py-1 lg:py-2 max-w-[1600px] mx-auto flex flex-col gap-3 lg:gap-4 font-sans text-[#343832]">
+    <div className="w-full px-4 sm:px-6 lg:px-10 py-1 lg:py-2 max-w-[1600px] mx-auto flex flex-col gap-3 lg:gap-4 font-sans text-[#343832] dark:text-[#EDE8E1]">
       
       {/* 2. TWO COLUMN MAIN WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
@@ -488,16 +488,16 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
         <div className="lg:col-span-5 flex flex-col">
           
           {/* UNIFIED UNDERSTAND + COMMUNICATE SECTION */}
-          <div className="bg-white border border-[#E3DAC9] rounded-[32px] p-5 flex flex-col gap-4 shadow-md">
+          <div className="bg-white dark:bg-[#15221C] border border-[#E3DAC9] dark:border-[#283D33] rounded-[32px] p-5 flex flex-col gap-4 shadow-md">
             
             {/* UNDERSTAND HEADING & CONTROLS */}
-            <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[#E3DAC9]/40">
-              <h2 className="text-xl font-serif italic text-[#1E3A2B]">Understand</h2>
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-[#E3DAC9]/40 dark:border-[#283D33]">
+              <h2 className="text-xl font-serif italic text-[#1E3A2B] dark:text-[#EDE8E1]">Understand</h2>
               <div className="flex items-center gap-2">
                 {/* Clear Button */}
                 <button
                   onClick={handleClearTokens}
-                  className="text-xs text-[#72786F] hover:text-[#C87A5B] transition-colors flex items-center gap-1"
+                  className="text-xs text-[#72786F] dark:text-[#9BB0A4] hover:text-[#C87A5B] dark:hover:text-[#DE795D] transition-colors flex items-center gap-1"
                   title="Clear tokens"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -507,21 +507,21 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                 <div className="relative">
                   <button
                     onClick={() => setIsContextOpen(!isContextOpen)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F2ECE1] hover:bg-[#EBE3D4] text-[#1E3A2B] text-xs font-semibold border border-[#E3DAC9] transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F2ECE1] dark:bg-[#1B2C24] hover:bg-[#EBE3D4] dark:hover:bg-[#15221C] text-[#1E3A2B] dark:text-[#EDE8E1] text-xs font-semibold border border-[#E3DAC9] dark:border-[#283D33] transition-colors whitespace-nowrap"
                     title="Translation Context"
                     aria-expanded={isContextOpen}
                     aria-haspopup="true"
                   >
                     <BrainCircuit className="w-3.5 h-3.5 shrink-0" />
                     <span className="hidden sm:inline">Context</span>
-                    <span className="text-[10px] text-[#72786F] font-medium hidden sm:inline">({registerMode})</span>
+                    <span className="text-[10px] text-[#72786F] dark:text-[#9BB0A4] font-medium hidden sm:inline">({registerMode})</span>
                     <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${isContextOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* Context Popover */}
                   {isContextOpen && (
                     <div className="absolute right-0 top-full mt-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
-                      <div className="bg-white border border-[#E3DAC9] rounded-xl shadow-lg p-1.5 min-w-[140px]">
+                      <div className="bg-white dark:bg-[#15221C] border border-[#E3DAC9] dark:border-[#283D33] rounded-xl shadow-lg p-1.5 min-w-[140px]">
                         {(['Casual', 'Academic', 'Medical'] as const).map((mode) => (
                           <button
                             key={mode}
@@ -532,15 +532,15 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                             }}
                             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                               registerMode === mode
-                                ? 'bg-[#1E3A2B] text-white'
-                                : 'text-[#343832] hover:bg-[#F2ECE1]'
+                                ? 'bg-[#1E3A2B] dark:bg-[#24523C] text-white'
+                                : 'text-[#343832] dark:text-[#EDE8E1] hover:bg-[#F2ECE1] dark:hover:bg-[#1B2C24]'
                             }`}
                           >
                             {mode}
                           </button>
                         ))}
                       </div>
-                      <div className="absolute right-2 -top-1 w-2 h-2 bg-white border-l border-t border-[#E3DAC9] rotate-45" />
+                      <div className="absolute right-2 -top-1 w-2 h-2 bg-white dark:bg-[#15221C] border-l border-t border-[#E3DAC9] dark:border-[#283D33] rotate-45" />
                     </div>
                   )}
 
@@ -559,7 +559,7 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
             {/* Dynamic Concept Chips */}
             <div className="flex flex-wrap gap-1.5 items-center min-h-[32px]">
               {tokens.length === 0 ? (
-                <div className="text-[11px] text-[#9DA39A] py-1 italic font-medium leading-relaxed">
+                <div className="text-[11px] text-[#9DA39A] dark:text-[#9BB0A4] py-1 italic font-medium leading-relaxed">
                   Reconstructing sign intent into natural syntax...
                 </div>
               ) : (
@@ -570,12 +570,12 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                       <span
                         className={`px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all flex items-center gap-1 cursor-pointer ${
                           isLast
-                            ? 'bg-[#1E3A2B] text-white shadow-xs'
-                            : 'bg-white border border-[#E3DAC9] text-[#1E3A2B] hover:bg-[#FDFBF7]'
+                            ? 'bg-[#1E3A2B] dark:bg-[#24523C] text-white shadow-xs'
+                            : 'bg-white dark:bg-[#15221C] border border-[#E3DAC9] dark:border-[#283D33] text-[#1E3A2B] dark:text-[#EDE8E1] hover:bg-[#FDFBF7] dark:hover:bg-[#1B2C24]'
                         }`}
                       >
                         <span>{token.word}</span>
-                        <span className={`text-[9px] ${isLast ? 'text-white/70' : 'text-[#9DA39A]'}`}>
+                        <span className={`text-[9px] ${isLast ? 'text-white/70' : 'text-[#9DA39A] dark:text-[#9BB0A4]'}`}>
                           {token.time}
                         </span>
                         <button
@@ -591,7 +591,7 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                       </span>
 
                       {index < tokens.length - 1 && (
-                        <ArrowRight className="w-2.5 h-2.5 text-[#9DA39A] shrink-0" />
+                        <ArrowRight className="w-2.5 h-2.5 text-[#9DA39A] dark:text-[#9BB0A4] shrink-0" />
                       )}
                     </React.Fragment>
                   );
@@ -600,9 +600,9 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
             </div>
 
             {/* COMMUNICATE HEADING & CERTAINTY */}
-            <div className="flex items-center justify-between pt-3 border-t border-[#E3DAC9]/40">
-              <h2 className="text-xl font-serif italic text-[#1E3A2B]">Communicate</h2>
-              <span className="px-3 py-1 rounded-full bg-[#FAF0EB] text-[#C87A5B] border border-[#F2D7CB] text-xs font-bold">
+            <div className="flex items-center justify-between pt-3 border-t border-[#E3DAC9]/40 dark:border-[#283D33]">
+              <h2 className="text-xl font-serif italic text-[#1E3A2B] dark:text-[#EDE8E1]">Communicate</h2>
+              <span className="px-3 py-1 rounded-full bg-[#FAF0EB] dark:bg-[#1B2C24] text-[#C87A5B] dark:text-[#DE795D] border border-[#F2D7CB] dark:border-[#283D33] text-xs font-bold">
                 {certainty} Certainty
               </span>
             </div>
@@ -615,52 +615,52 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                     value={editedInput}
                     onChange={(e) => setEditedInput(e.target.value)}
                     rows={3}
-                    className="w-full p-2.5 rounded-xl bg-white border border-[#1E3A2B] text-[#1E3A2B] font-serif text-lg focus:outline-none"
+                    className="w-full p-2.5 rounded-xl bg-white dark:bg-[#1B2C24] border border-[#1E3A2B] dark:border-[#283D33] text-[#1E3A2B] dark:text-[#EDE8E1] font-serif text-lg focus:outline-none"
                   />
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-3 py-1 rounded-lg text-xs text-[#72786F] hover:bg-[#F2ECE1]"
+                      className="px-3 py-1 rounded-lg text-xs text-[#72786F] dark:text-[#9BB0A4] hover:bg-[#F2ECE1] dark:hover:bg-[#15221C]"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveEdit}
-                      className="px-4 py-1 rounded-lg bg-[#1E3A2B] text-white text-xs font-bold shadow-xs"
+                      className="px-4 py-1 rounded-lg bg-[#1E3A2B] dark:bg-[#24523C] text-white text-xs font-bold shadow-xs"
                     >
                       Save
                     </button>
                   </div>
                 </div>
               ) : (
-                <p className="text-xl leading-relaxed text-[#1E3A2B] font-serif">
+                <p className="text-xl leading-relaxed text-[#1E3A2B] dark:text-[#EDE8E1] font-serif">
                   {sentenceText}
                 </p>
               )}
             </div>
 
             {/* Voice & Speed Controls Row */}
-            <div className="pt-3 border-t border-[#E3DAC9]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="pt-3 border-t border-[#E3DAC9]/40 dark:border-[#283D33] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-wrap">
                   {/* Voice Selector - Custom Dropdown */}
                   <div className="relative">
                     <button
                       ref={dropdownRef}
                       onClick={() => setIsVoiceOpen(!isVoiceOpen)}
-                      className="flex items-center gap-2 px-3 py-2 bg-[#FAF3E3] rounded-xl border border-[#F2D7CB] transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 bg-[#FAF3E3] dark:bg-[#1B2C24] rounded-xl border border-[#F2D7CB] dark:border-[#283D33] transition-colors"
                       aria-expanded={isVoiceOpen}
                       aria-haspopup="listbox"
                     >
-                      <Mic2 className="w-4 h-4 text-[#C87A5B] shrink-0" />
-                      <span className="text-sm font-medium text-[#1E3A2B]">{selectedVoice}</span>
-                      <ChevronDown className={`w-4 h-4 text-[#72786F] transition-transform ${isVoiceOpen ? 'rotate-180' : ''}`} />
+                      <Mic2 className="w-4 h-4 text-[#C87A5B] dark:text-[#DE795D] shrink-0" />
+                      <span className="text-sm font-medium text-[#1E3A2B] dark:text-[#EDE8E1]">{selectedVoice}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#72786F] dark:text-[#9BB0A4] transition-transform ${isVoiceOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isVoiceOpen && (
                       <div className="fixed z-50 animate-in fade-in-0 zoom-in-95 duration-150" style={{
                         top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + 8 : 0,
                         right: dropdownRef.current ? window.innerWidth - dropdownRef.current.getBoundingClientRect().right : 0
                       }}>
-                        <div className="bg-white border border-[#E3DAC9] rounded-xl shadow-lg py-1 min-w-[140px]">
+                        <div className="bg-white dark:bg-[#15221C] border border-[#E3DAC9] dark:border-[#283D33] rounded-xl shadow-lg py-1 min-w-[140px]">
                           {(['Mira', 'Rian'] as const).map((voice) => (
                             <button
                               key={voice}
@@ -671,8 +671,8 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                               }}
                               className={`w-full px-3 py-2 text-sm font-medium text-left transition-colors ${
                                 selectedVoice === voice
-                                  ? 'bg-[#1E3A2B] text-white'
-                                  : 'text-[#343832] hover:bg-[#F2ECE1]'
+                                  ? 'bg-[#1E3A2B] dark:bg-[#24523C] text-white'
+                                  : 'text-[#343832] dark:text-[#EDE8E1] hover:bg-[#F2ECE1] dark:hover:bg-[#1B2C24]'
                               }`}
                             >
                               {voice}
@@ -691,8 +691,8 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                   </div>
 
                   {/* Speed Slider - Clean Track with Green Knob */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-[#F2ECE1] rounded-xl border border-[#E3DAC9] min-w-[200px]">
-                    <Gauge className="w-4 h-4 text-[#1E3A2B] shrink-0" />
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#F2ECE1] dark:bg-[#1B2C24] rounded-xl border border-[#E3DAC9] dark:border-[#283D33] min-w-[200px]">
+                    <Gauge className="w-4 h-4 text-[#1E3A2B] dark:text-[#EDE8E1] shrink-0" />
                     <div className="flex-1 relative" style={{ height: '28px' }}>
                       <input
                         type="range"
@@ -709,23 +709,23 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                         }}
                       />
                       <div className="pointer-events-none absolute inset-0 flex items-center">
-                        <div className="w-full h-2 bg-[#E3DAC9] rounded-full" />
+                        <div className="w-full h-2 bg-[#E3DAC9] dark:bg-[#283D33] rounded-full" />
                       </div>
                       <div 
                         className="absolute top-1/2 -translate-y-1/2 pointer-events-none"
                         style={{ left: `${((speed - 0.5) / 1.5) * 100}%` }}
                       >
-                        <div className="w-5 h-5 bg-[#1E3A2B] rounded-full shadow-lg -translate-x-1/2 border-2 border-white" />
+                        <div className="w-5 h-5 bg-[#1E3A2B] dark:bg-[#24523C] rounded-full shadow-lg -translate-x-1/2 border-2 border-white dark:border-[#EDE8E1]" />
                       </div>
                     </div>
-                    <span className="text-xs font-mono text-[#72786F] w-12 text-right">{speed.toFixed(1)}x</span>
+                    <span className="text-xs font-mono text-[#72786F] dark:text-[#9BB0A4] w-12 text-right">{speed.toFixed(1)}x</span>
                   </div>
                 </div>
 
                 {/* Rephrase Button */}
                 <button
                   onClick={handleReweave}
-                  className="text-xs text-[#C87A5B] hover:text-[#B56B4E] font-medium flex items-center gap-1 transition-colors whitespace-nowrap"
+                  className="text-xs text-[#C87A5B] dark:text-[#DE795D] hover:text-[#B56B4E] dark:hover:text-[#C85A3E] font-medium flex items-center gap-1 transition-colors whitespace-nowrap"
                   title="Cycle alternate phrasing"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -734,10 +734,10 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
               </div>
 
               {/* Action Buttons Row */}
-              <div className="pt-3 border-t border-[#E3DAC9]/40 grid grid-cols-2 gap-3">
+              <div className="pt-3 border-t border-[#E3DAC9]/40 dark:border-[#283D33] grid grid-cols-2 gap-3">
                 <button
                   onClick={handleSpeakAloud}
-                  className="px-4 py-3.5 bg-[#1E3A2B] hover:bg-[#152A1F] text-white rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  className="px-4 py-3.5 bg-[#1E3A2B] dark:bg-[#24523C] hover:bg-[#152A1F] dark:hover:bg-[#2A4F3C] text-white rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                   id="btn-speak-aloud"
                 >
                   <Volume2 className="w-4 h-4" />
@@ -755,23 +755,23 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
                       handleCopy();
                     }
                   }}
-                  className="px-4 py-3.5 bg-white border border-[#E3DAC9] text-[#1E3A2B] rounded-2xl font-bold text-sm shadow-xs hover:bg-[#FDFBF7] flex items-center justify-center gap-2 transition-all"
+                  className="px-4 py-3.5 bg-white dark:bg-[#15221C] border border-[#E3DAC9] dark:border-[#283D33] text-[#1E3A2B] dark:text-[#EDE8E1] rounded-2xl font-bold text-sm shadow-xs hover:bg-[#FDFBF7] dark:hover:bg-[#1B2C24] flex items-center justify-center gap-2 transition-all"
                 >
-                  {isCopied ? <Check className="w-4 h-4 text-[#1E3A2B]" /> : <Share2 className="w-4 h-4" />}
+                  {isCopied ? <Check className="w-4 h-4 text-[#1E3A2B] dark:text-[#EDE8E1]" /> : <Share2 className="w-4 h-4" />}
                   <span>{isCopied ? 'Copied' : 'Share'}</span>
                 </button>
               </div>
 
             {/* Recent Library Logs - compact */}
-            <div className="pt-3 border-t border-[#E3DAC9]/40">
+            <div className="pt-3 border-t border-[#E3DAC9]/40 dark:border-[#283D33]">
               <div className="flex items-center justify-between px-1 mb-1.5">
-                <span className="text-xs font-bold text-[#1E3A2B] flex items-center gap-1.5">
-                  <History className="w-3.5 h-3.5 text-[#1E3A2B]" />
+                <span className="text-xs font-bold text-[#1E3A2B] dark:text-[#EDE8E1] flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-[#1E3A2B] dark:text-[#EDE8E1]" />
                   <span>Recent Library Logs</span>
                 </span>
                 <button
                   onClick={() => onSelectScreen?.('conversation-history')}
-                  className="text-[11px] text-[#C87A5B] hover:underline flex items-center gap-0.5 font-medium"
+                  className="text-[11px] text-[#C87A5B] dark:text-[#DE795D] hover:underline flex items-center gap-0.5 font-medium"
                 >
                   <span>View all in Library</span>
                   <ArrowRight className="w-3 h-3" />
@@ -781,20 +781,20 @@ export const SignWorkspace: React.FC<SignWorkspaceProps> = ({
               {conversationHistory.slice(0, 2).map((item) => (
                 <div
                   key={item.id}
-                  className="p-2.5 rounded-lg bg-white border border-[#E3DAC9]/50 shadow-xs flex flex-col gap-1 hover:border-[#1E3A2B]/40 transition-colors"
+                  className="p-2.5 rounded-lg bg-white dark:bg-[#15221C] border border-[#E3DAC9]/50 dark:border-[#283D33] shadow-xs flex flex-col gap-1 hover:border-[#1E3A2B]/40 dark:hover:border-[#2A4F3C] transition-colors"
                 >
-                  <div className="flex items-center justify-between text-xs text-[#72786F]">
+                  <div className="flex items-center justify-between text-xs text-[#72786F] dark:text-[#9BB0A4]">
                     <span>{item.time} • {item.tokens.length} signs</span>
                     <button
                       onClick={() => handleReplayPast(item.sentence)}
-                      className="text-[#C87A5B] font-semibold hover:underline flex items-center gap-1 text-[11px]"
+                      className="text-[#C87A5B] dark:text-[#DE795D] font-semibold hover:underline flex items-center gap-1 text-[11px]"
                     >
                       <Volume2 className="w-3 h-3" />
                       <span>Replay</span>
                     </button>
                   </div>
 
-                  <p className="font-serif text-sm text-[#1E3A2B]">
+                  <p className="font-serif text-sm text-[#1E3A2B] dark:text-[#EDE8E1]">
                     {item.sentence}
                   </p>
                 </div>

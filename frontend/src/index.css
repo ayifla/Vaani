@@ -73,6 +73,21 @@
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
+/* Dark mode body background */
+.dark {
+  background-color: #0E1612;
+  color: #EDE8E1;
+}
+
+body {
+  background-color: #F8F5EE;
+  transition: background-color 0.3s ease;
+}
+
+body.dark {
+  background-color: #0E1612;
+}
+
 /* Custom scrollbar styling for Vaani Brand Palette */
 ::-webkit-scrollbar {
   width: 6px;
@@ -81,12 +96,21 @@
 ::-webkit-scrollbar-track {
   background: #F8F5EE;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #15221C;
+}
 ::-webkit-scrollbar-thumb {
   background: #E3DAC9;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #283D33;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #1E3A2B;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2A4F3C;
 }
 
 .no-scrollbar::-webkit-scrollbar {

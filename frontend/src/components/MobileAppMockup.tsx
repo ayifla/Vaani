@@ -51,6 +51,18 @@ export const MobileAppMockup: React.FC<MobileAppMockupProps> = ({
   // Mobile app tab navigation
   const [activeTab, setActiveTab] = useState<MobileScreen>('sign');
 
+  // Handle ESC key to close overlay
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onBackToWeb();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onBackToWeb]);
+
   // Sign tab states
   const [mobileMode, setMobileMode] = useState<'camera' | 'demo'>('camera');
   const [isFlashOn, setIsFlashOn] = useState<boolean>(false);
@@ -112,70 +124,48 @@ export const MobileAppMockup: React.FC<MobileAppMockupProps> = ({
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-8 px-4 flex flex-col items-center justify-start relative overflow-hidden font-sans text-[#343832]">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center overflow-hidden">
       
-      {/* Background Subtle Shapes */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#EBF3EE] rounded-full blur-3xl pointer-events-none opacity-60" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#F2ECE1] rounded-full blur-3xl pointer-events-none opacity-60" />
+      {/* Close button hint */}
+      <button
+        onClick={onBackToWeb}
+        className="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition-all text-sm font-medium z-50"
+      >
+        Press ESC to close
+      </button>
 
-      {/* TOP CONTROL BAR: BACK TO WEB & DEVICE INFO */}
-      <div className="w-full max-w-4xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 z-20">
-        
-        {/* PROMINENT "BACK TO WEB" BUTTON */}
-        <button
-          onClick={onBackToWeb}
-          className="group flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white hover:bg-[#F2ECE1] text-[#1E3A2B] border border-[#E3DAC9] shadow-xs transition-all hover:scale-105 active:scale-95 font-bold text-sm"
-          id="btn-back-to-web"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#1E3A2B] group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Web Application</span>
-        </button>
-
-        {/* Device Status Pills */}
-        <div className="flex items-center gap-3 text-xs text-[#1E3A2B]">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#E3DAC9] shadow-xs">
-            <Smartphone className="w-3.5 h-3.5 text-[#1E3A2B]" />
-            <span className="font-semibold">Vaani Mobile Preview</span>
-          </div>
-          <span className="hidden sm:inline-block text-[11px] text-[#72786F]">
-            Touch-first thumb controls • Full interaction parity
-          </span>
-        </div>
-
-      </div>
-
-      {/* SMARTPHONE DEVICE CONTAINER */}
-      <div className="relative w-[380px] sm:w-[400px] h-[820px] rounded-[50px] bg-[#1E2822] p-3.5 shadow-2xl border-[4px] border-[#2C3B32] flex flex-col justify-between shrink-0">
+      {/* SMARTPHONE DEVICE CONTAINER - Centered */}
+      <div className="relative w-[320px] h-[660px] max-h-[90vh] rounded-[42px] bg-[#1E2822] p-3 shadow-2xl border-[4px] border-[#2C3B32] flex flex-col justify-between shrink-0">
         
         {/* Phone Side Buttons Visual Mockup */}
-        <div className="absolute -left-[7px] top-28 w-[3px] h-8 bg-[#2C3B32] rounded-l" />
-        <div className="absolute -left-[7px] top-40 w-[3px] h-12 bg-[#2C3B32] rounded-l" />
-        <div className="absolute -left-[7px] top-56 w-[3px] h-12 bg-[#2C3B32] rounded-l" />
-        <div className="absolute -right-[7px] top-36 w-[3px] h-16 bg-[#2C3B32] rounded-r" />
+        <div className="absolute -left-[6px] top-24 w-[3px] h-6 bg-[#2C3B32] rounded-l" />
+        <div className="absolute -left-[6px] top-32 w-[3px] h-10 bg-[#2C3B32] rounded-l" />
+        <div className="absolute -left-[6px] top-44 w-[3px] h-10 bg-[#2C3B32] rounded-l" />
+        <div className="absolute -right-[6px] top-30 w-[3px] h-12 bg-[#2C3B32] rounded-r" />
 
         {/* Dynamic Island / Top Speaker Notch */}
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-40 flex items-center justify-between px-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#152019] flex items-center justify-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2C3B32]" />
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-40 flex items-center justify-between px-2">
+          <div className="w-2 h-2 rounded-full bg-[#152019] flex items-center justify-center">
+            <span className="w-1 h-1 rounded-full bg-[#2C3B32]" />
           </div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#152019]" />
+          <div className="w-2 h-2 rounded-full bg-[#152019]" />
         </div>
 
         {/* INNER SMARTPHONE SCREEN */}
-        <div className="w-full h-full rounded-[40px] bg-[#FDFBF7] overflow-hidden flex flex-col relative text-[#343832]">
+        <div className="w-full h-full rounded-[34px] bg-[#FDFBF7] overflow-hidden flex flex-col relative text-[#343832]">
           
           {/* Mobile Status Bar (9:41, Wi-Fi, 5G, Battery) */}
-          <div className="h-10 w-full px-7 pt-2 flex items-center justify-between text-[11px] font-semibold text-[#1E3A2B] select-none z-30">
+          <div className="h-9 w-full px-6 pt-1.5 flex items-center justify-between text-[10px] font-semibold text-[#1E3A2B] select-none z-30 shrink-0">
             <span>9:41</span>
             <div className="flex items-center gap-1.5">
-              <Signal className="w-3 h-3 text-[#1E3A2B]" />
-              <Wifi className="w-3 h-3 text-[#1E3A2B]" />
-              <Battery className="w-3.5 h-3.5 text-[#1E3A2B]" />
+              <Signal className="w-2.5 h-2.5 text-[#1E3A2B]" />
+              <Wifi className="w-2.5 h-2.5 text-[#1E3A2B]" />
+              <Battery className="w-3 h-3 text-[#1E3A2B]" />
             </div>
           </div>
 
           {/* MOBILE APP HEADER */}
-          <div className="h-12 px-4 flex items-center justify-between border-b border-[#E3DAC9] bg-white/95 backdrop-blur-md shrink-0">
+          <div className="h-11 px-3 flex items-center justify-between border-b border-[#E3DAC9] bg-white/95 backdrop-blur-md shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-[#1E3A2B] flex items-center justify-center">
                 <Hand className="w-3.5 h-3.5 text-white" />
