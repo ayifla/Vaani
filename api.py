@@ -33,10 +33,13 @@ from agents.demo_vocabulary import convert_gestures_to_concepts
 SEQUENCE_FILE = Path(__file__).parent / "data" / "current_sequence.json"
 load_dotenv()
 
-supabase = create_client(
-    os.environ["SUPABASE_URL"],
-    os.environ["SUPABASE_SECRET_KEY"],
-)
+supabase = None
+
+if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SECRET_KEY"):
+    supabase = create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SECRET_KEY"],
+    )
 
 
 app = FastAPI(title="SignaAI API")
@@ -97,11 +100,12 @@ def translate(request: TranslateRequest):
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    supabase.table("translations").insert({
-        "signs": ", ".join(signs),
-        "sentence": sentence,
-        "context": context.get("name", ""),
-    }).execute()
+    if supabase:
+        supabase.table("translations").insert({
+            "signs": ", ".join(signs),
+            "sentence": sentence,
+            "context": context.get("name", ""),
+        }).execute()
 
     return {
         "signs": signs,
@@ -152,11 +156,12 @@ def detect():
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    supabase.table("translations").insert({
-        "signs": ", ".join(signs),
-        "sentence": sentence,
-        "context": context.get("name", ""),
-    }).execute()
+    if supabase:
+        supabase.table("translations").insert({
+            "signs": ", ".join(signs),
+            "sentence": sentence,
+            "context": context.get("name", ""),
+        }).execute()
 
     return {
         "signs": signs,
