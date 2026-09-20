@@ -30,6 +30,8 @@ import { ConceptToken, ConversationExchange, SimulationScenario } from '../types
 import { SIMULATION_SCENARIOS } from '../data/mockData';
 import { speakText } from '../utils/speech';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 interface SignWorkspaceProps {
   currentScenario: SimulationScenario;
   onSelectScenario: (scenario: SimulationScenario) => void;
@@ -206,7 +208,7 @@ useEffect(() => {                          // <-- new one starts here
   try {
     const signWords = scenario.tokens.map((t) => t.word);
 
-    const response = await fetch('http://localhost:8000/translate', {
+    const response = await fetch(`${API_URL}/translate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ signs: signWords }),
@@ -228,7 +230,7 @@ const lastDetectedRef = useRef<string>('');
 
 const checkForNewSign = async () => {
   try {
-    const response = await fetch('http://localhost:8000/detect', {
+const response = await fetch(`${API_URL}/detect`, {
       method: 'GET',
     });
 
