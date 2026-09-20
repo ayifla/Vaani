@@ -510,7 +510,7 @@ const checkForNewSign = async () => {
                   <BrainCircuit className="w-4 h-4" />
                 </button>
                 <button
-  onClick={callDetectAPI}
+  onClick={checkForNewSign}
   className="p-2.5 rounded-xl bg-[#C87A5B] hover:bg-[#B56B4E] text-white border border-[#E3DAC9] transition-colors"
   title="Check what was signed on the Python camera (press S in camera.py first)"
 >

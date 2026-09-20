@@ -100,7 +100,7 @@ def translate(request: TranslateRequest):
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    if False and supabase:
+    if supabase:
         supabase.table("translations").insert({
             "signs": ", ".join(signs),
             "sentence": sentence,
@@ -156,7 +156,7 @@ def detect():
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    if False and supabase:
+    if supabase:
         supabase.table("translations").insert({
             "signs": ", ".join(signs),
             "sentence": sentence,
