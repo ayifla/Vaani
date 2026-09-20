@@ -100,7 +100,7 @@ def translate(request: TranslateRequest):
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    if supabase:
+    if False and supabase:
         supabase.table("translations").insert({
             "signs": ", ".join(signs),
             "sentence": sentence,
@@ -150,13 +150,13 @@ def detect():
         )
 
     # Raw gestures (e.g. "OPEN PALM") -> vocabulary concepts (e.g. "HELLO")
-    signs = convert_gestures_to_concepts(gestures)
+    signs = gestures  # LSTM already outputs final words, no conversion needed
 
     context = identify_context(signs)
     sentence = reconstruct_sentence(signs, context)
     validation = validate_translation(signs, sentence, context)
 
-    if supabase:
+    if False and supabase:
         supabase.table("translations").insert({
             "signs": ", ".join(signs),
             "sentence": sentence,
