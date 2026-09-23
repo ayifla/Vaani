@@ -49,9 +49,11 @@ export class VaaniHandTracker {
     });
   }
 
-  async processFrame(video: HTMLVideoElement) {
-    await this.detector.send({ image: video });
-  }
+async processFrame(
+  image: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement
+) {
+  await this.detector.send({ image });
+}
 
   async close() {
     await this.detector.close();

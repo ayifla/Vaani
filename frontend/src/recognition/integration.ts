@@ -33,7 +33,9 @@ export class VaaniRecognitionController {
   // Process one video frame using MediaPipe.
   // The recognition pipeline receives the detected hands
   // automatically through the tracker callback.
-  async processFrame(video: HTMLVideoElement): Promise<void> {
+async processFrame(
+  video: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement
+): Promise<void> {
     if (this.processing || this.closed) return;
 
     this.processing = true;

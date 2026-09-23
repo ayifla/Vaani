@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vaani Final Integration Test</title>
+</head>
+
+<body>
+  <h1>Vaani Final Integration Test</h1>
+
+  <p>Upload a clear picture of a hand performing a sign.</p>
+
+  <input type="file" id="imageInput" accept="image/*" />
+
+  <br /><br />
+
+  <button id="testButton" disabled>
+    Run Integration Test
+  </button>
+
+  <h3>Test Results</h3>
+
+  <pre id="output">Please upload a hand image.</pre>
+
+  <canvas
+    id="canvas"
+    style="max-width: 400px; width: 100%;"
+  ></canvas>
+
+  <script type="module">
+    import {
+      VaaniRecognitionController
+    } from "/src/recognition/integration.ts";
+
+    const input = document.getElementById("imageInput");
+    const button = document.getElementById("testButton");
+    const output = document.getElementById("output");
+    const canvas = document.getElementById("canvas");
+
+    const ctx = canvas.getContext("2d");
+
+    let imageReady = false;
+
+    function log(message) {
+      output.textContent += "\n" + message;
+      console.log(message);
+    }
+
+    input.addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      button.disabled = true;
+      imageReady = false;
+      output.textContent = "Loading image...";
+
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+
+      image.onload = () => {
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        ctx.drawImage(image, 0, 0);
+
+        URL.revokeObjectURL(url);
+
+        imageReady = true;
+        button.disabled = false;
+
+        output.textContent =
+          "Image loaded successfully.\nReady to test.";
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        output.textContent = "Failed to load image.";
+      };
+
+      image.src = url;
+    });
+
+    button.addEventListener("click", async () => {
+      if (!imageReady) return;
+
+      button.disabled = true;
+      output.textContent = "Starting integration test...";
+
+      let controller = null;
+      let predictionReceived = false;
+      let pipelineError = null;
+
+      try {
+        controller = new VaaniRecognitionController(
+          (result) => {
+            predictionReceived = true;
+
+            log("\nPREDICTION RECEIVED!");
+            log("Predicted label: " + result.label);
+            log("Confidence: " + result.confidence);
+            log("Class index: " + result.classIndex);
+            log(
+              "Total output classes: " +
+              result.probabilities.length
+            );
+
+            log("\nINTEGRATION TEST PASSED!");
+          },
+          (error) => {
+            pipelineError = error;
+            log("Pipeline error: " + error.message);
+          }
+        );
+
+        log("Loading Vaani V2 model...");
+
+        await controller.initialize();
+
+        log("Model loaded successfully.");
+        log("Processing image directly with MediaPipe...");
+
+        // Repeatedly process the uploaded image to test
+        // the complete 32-frame recognition pipeline.
+        for (let i = 0; i < 60; i++) {
+          if (predictionReceived || pipelineError) break;
+
+          await controller.processFrame(canvas);
+
+          if (i % 5 === 0) {
+            log(
+              "Attempt " + (i + 1) +
+              " | Sequence progress: " +
+              controller.getProgress() + "/32"
+            );
+          }
+
+          await new Promise(
+            (resolve) => setTimeout(resolve, 100)
+          );
+        }
+
+        if (!predictionReceived && !pipelineError) {
+          log("Waiting for final prediction...");
+
+          await new Promise(
+            (resolve) => setTimeout(resolve, 3000)
+          );
+        }
+
+        if (!predictionReceived && !pipelineError) {
+          log("\nTEST INCOMPLETE.");
+          log(
+            "No prediction received. Check whether " +
+            "MediaPipe is detecting the uploaded hand."
+          );
+        }
+
+      } catch (error) {
+        log("\nTEST FAILED: " + error.message);
+        console.error(error);
+
+      } finally {
+        if (controller) {
+          await controller.close();
+        }
+
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
