@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vaani V2 Recognition Test</title>
+</head>
+
+<body>
+  <h1>Vaani V2 Recognition Test</h1>
+
+  <p>Testing the 30-sign model without a webcam.</p>
+
+  <button id="test">Run Recognition Test</button>
+
+  <pre id="output">Waiting for test...</pre>
+
+  <script type="module">
+    import {
+      VaaniRecognitionPipeline
+    } from "/src/recognition/pipeline.ts";
+
+    const output = document.getElementById("output");
+    const button = document.getElementById("test");
+
+    function log(message) {
+      output.textContent += "\n" + message;
+      console.log(message);
+    }
+
+    // Generate synthetic hand landmarks.
+    function createTestHand() {
+      const landmarks = [];
+
+      for (let i = 0; i < 21; i++) {
+        landmarks.push({
+          x: 0.5 + i * 0.005,
+          y: 0.4 + i * 0.008,
+          z: i * 0.001
+        });
+      }
+
+      return {
+        landmarks,
+        handedness: "Right"
+      };
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Starting test...";
+
+      try {
+        let predictionReceived = false;
+
+        const pipeline = new VaaniRecognitionPipeline(
+          (result) => {
+            predictionReceived = true;
+
+            log("MODEL PREDICTION RECEIVED");
+            log("Predicted sign: " + result.label);
+            log("Confidence: " + result.confidence);
+            log("Class index: " + result.classIndex);
+            log("Output classes: " + result.probabilities.length);
+          }
+        );
+
+        await pipeline.initialize();
+
+        log("Model initialized successfully.");
+
+        // Simulate 32 consecutive frames.
+        for (let i = 0; i < 32; i++) {
+          await pipeline.addHands([createTestHand()]);
+        }
+
+        log("Frames processed: " + pipeline.getProgress());
+
+        if (!predictionReceived) {
+          throw new Error("No prediction was received.");
+        }
+
+        log("TEST PASSED!");
+
+      } catch (error) {
+        log("TEST FAILED: " + error.message);
+        console.error(error);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

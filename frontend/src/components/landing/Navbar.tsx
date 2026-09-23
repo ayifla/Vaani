@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sun, Moon, Menu, X, ArrowUpRight } from 'lucide-react';
 import { VaaniLogo } from './VaaniLogo';
-import { Theme } from '../types';
+import { Theme } from '../../types';
 
 interface NavbarProps {
   theme: Theme;

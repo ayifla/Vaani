@@ -1,4 +1,4 @@
-import { SemanticScenario, ToneOption } from '../types';
+import { SemanticScenario, ToneOption } from '../../types';
 
 export const SEMANTIC_SCENARIOS: SemanticScenario[] = [
   {

@@ -59,3 +59,24 @@ export type WebScreen = 'sign-workspace' | 'conversation-history' | 'practice-vo
 export type MobileScreen = 'sign' | 'history' | 'practice' | 'settings';
 export type AppMode = 'web' | 'mobile_mockup';
 export type Theme = 'light' | 'dark';
+export interface SemanticScenario {
+  id: string;
+  title: string;
+  contextTag: string;
+  registerName: string;
+  concepts: string[];
+  literalOutput: string;
+  literalCritique: string;
+  reconstructedSentence: string;
+  linguisticHighlights: string[];
+  voiceTone: string;
+  audioDurationSec: number;
+}
+
+export interface ToneOption {
+  id: string;
+  name: string;
+  description: string;
+  speechPitch: number;
+  speechRate: number;
+}

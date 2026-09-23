@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { SEMANTIC_SCENARIOS, TONE_OPTIONS } from '../data/scenarios';
-import { ToneOption } from '../types';
+import { ToneOption } from '../../../src/types';
 
 interface ProductPreviewProps {
   onEnterWorkspace: () => void;

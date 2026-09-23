@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Volume2, Check, ArrowDown, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SEMANTIC_SCENARIOS } from '../../data/landing/scenarios';
-import { SemanticScenario } from '../types';
+import { SemanticScenario } from '../../types';
 
 export const SemanticDifference: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<SemanticScenario>(SEMANTIC_SCENARIOS[0]);
