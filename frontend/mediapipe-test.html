@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vaani MediaPipe Test</title>
+</head>
+
+<body>
+  <h1>Vaani MediaPipe Hand Detection Test</h1>
+
+  <p>Upload a clear picture of one or two hands.</p>
+
+  <input type="file" id="imageInput" accept="image/*" />
+
+  <h3>Detection Results</h3>
+  <pre id="output">Waiting for image...</pre>
+
+  <canvas id="canvas" style="max-width: 100%;"></canvas>
+
+  <script type="module">
+    import { Hands } from "@mediapipe/hands";
+
+    const input = document.getElementById("imageInput");
+    const output = document.getElementById("output");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const detector = new Hands({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    detector.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.35
+    });
+
+    detector.onResults((results) => {
+      const hands = results.multiHandLandmarks || [];
+      const labels = results.multiHandedness || [];
+
+      output.textContent =
+        "Hands detected: " + hands.length + "\n";
+
+      hands.forEach((landmarks, index) => {
+        output.textContent +=
+          "\nHand " + (index + 1) +
+          "\nLabel: " + (labels[index]?.label || "Unknown") +
+          "\nLandmarks: " + landmarks.length + "\n";
+
+        landmarks.forEach((point) => {
+          const x = point.x * canvas.width;
+          const y = point.y * canvas.height;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = "red";
+          ctx.fill();
+        });
+      });
+
+      if (hands.length > 0) {
+        output.textContent +=
+          "\nMEDIAPIPE DETECTION PASSED!";
+      } else {
+        output.textContent +=
+          "\nNo hands detected. Try another image.";
+      }
+    });
+
+    input.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      output.textContent = "Processing image...";
+
+      const image = new Image();
+      const imageURL = URL.createObjectURL(file);
+
+      image.onload = async () => {
+        try {
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+
+          ctx.drawImage(image, 0, 0);
+
+          await detector.send({ image });
+        } catch (error) {
+          output.textContent = "ERROR: " + error.message;
+          console.error(error);
+        } finally {
+          URL.revokeObjectURL(imageURL);
+        }
+      };
+
+      image.onerror = () => {
+        output.textContent = "Could not load image.";
+        URL.revokeObjectURL(imageURL);
+      };
+
+      image.src = imageURL;
+    });
+  </script>
+</body>
+</html>
