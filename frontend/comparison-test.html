@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vaani Model Comparison Test</title>
+</head>
+
+<body>
+  <h1>Vaani: Python vs TensorFlow.js</h1>
+
+  <p>Upload the comparison JSON generated in Google Colab.</p>
+
+  <input
+    type="file"
+    id="jsonFile"
+    accept=".json,application/json"
+  />
+
+  <br /><br />
+
+  <button id="testButton">
+    Run Comparison
+  </button>
+
+  <h3>Results</h3>
+
+  <pre id="output">Waiting for test...</pre>
+
+  <script type="module">
+    import {
+      loadVaaniModel,
+      predictSign
+    } from "/src/recognition/model.ts";
+
+    const fileInput = document.getElementById("jsonFile");
+    const button = document.getElementById("testButton");
+    const output = document.getElementById("output");
+
+    function log(message) {
+      output.textContent += "\n" + message;
+      console.log(message);
+    }
+
+    button.addEventListener("click", async () => {
+      const file = fileInput.files?.[0];
+
+      if (!file) {
+        output.textContent =
+          "Please select vaani_comparison.json first.";
+        return;
+      }
+
+      button.disabled = true;
+      output.textContent = "Starting comparison...";
+
+      try {
+        const data = JSON.parse(await file.text());
+
+        const input = data.input[0];
+        const python = data.python_predictions;
+
+        if (
+          input.length !== 32 ||
+          input.some(frame => frame.length !== 126)
+        ) {
+          throw new Error(
+            "Invalid input shape. Expected 32 x 126."
+          );
+        }
+
+        if (python.length !== 30) {
+          throw new Error(
+            "Expected 30 Python prediction probabilities."
+          );
+        }
+
+        log("Loading TensorFlow.js model...");
+
+        await loadVaaniModel();
+
+        log("Model loaded successfully.");
+        log("Running identical input through TensorFlow.js...");
+
+        const javascript = await predictSign(input);
+
+        const differences = python.map(
+          (value, index) =>
+            Math.abs(value - javascript[index])
+        );
+
+        const maxDifference = Math.max(...differences);
+
+        const averageDifference =
+          differences.reduce((a, b) => a + b, 0) /
+          differences.length;
+
+        const pythonClass = python.indexOf(
+          Math.max(...python)
+        );
+
+        const javascriptClass = javascript.indexOf(
+          Math.max(...javascript)
+        );
+
+        log("\n========== RESULTS ==========");
+
+        log("Python output classes: " + python.length);
+        log("JavaScript output classes: " + javascript.length);
+
+        log("\nPython predicted class: " + pythonClass);
+        log("JavaScript predicted class: " + javascriptClass);
+
+        log("\nPython confidence: " + Math.max(...python));
+        log(
+          "JavaScript confidence: " +
+          Math.max(...javascript)
+        );
+
+        log("\nMaximum absolute difference: " + maxDifference);
+        log("Average absolute difference: " + averageDifference);
+
+        const tolerance = 0.001;
+
+        if (
+          pythonClass === javascriptClass &&
+          maxDifference < tolerance
+        ) {
+          log("\nMODEL COMPARISON PASSED!");
+          log(
+            "Both implementations produce closely matching predictions."
+          );
+        } else {
+          log("\nMODEL COMPARISON NEEDS REVIEW.");
+          log(
+            "The predictions differ beyond the selected tolerance."
+          );
+        }
+
+      } catch (error) {
+        log("\nTEST FAILED: " + error.message);
+        console.error(error);
+
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
